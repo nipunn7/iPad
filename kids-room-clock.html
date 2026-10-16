@@ -1,0 +1,1483 @@
+<!doctype html>
+<html lang="en">
+<head>
+<meta charset="utf-8">
+<!-- Zoom is deliberately disabled: this is a fixed kiosk display on a
+     wall-mounted iPad, where pinch-zoom would only misalign the layout.
+     Intentional accessibility trade-off, documented in ipad-kiosk-setup.md. -->
+<meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no, viewport-fit=cover">
+<meta name="apple-mobile-web-app-capable" content="yes">
+<meta name="apple-mobile-web-app-status-bar-style" content="black-translucent">
+<meta name="mobile-web-app-capable" content="yes">
+<meta name="format-detection" content="telephone=no">
+<meta name="theme-color" content="#000000">
+<title>Room Clock</title>
+<style>
+/* ─────────────────────────────────────────────────────────────────────────
+ * Apple design system — tokens.css :root block, pasted verbatim (contract).
+ * The dark (night) skin below only remaps a subset of these same token
+ * names to Apple's dark-surface palette; no new token names are introduced.
+ * ─────────────────────────────────────────────────────────────────── */
+:root {
+  --bg: #ffffff;
+  --surface: #f5f5f7;
+  --surface-warm: #fbfbfd;
+  --fg: #1d1d1f;
+  --fg-2: #424245;
+  --muted: #6e6e73;
+  --meta: #86868b;
+  --border: #d2d2d7;
+  --border-soft: #e8e8ed;
+  --accent: #0071e3;
+  --accent-on: #ffffff;
+  --accent-hover: #0077ed;
+  --accent-active: #0066cc;
+  --success: #16a34a;
+  --warn:    #eab308;
+  --danger:  #dc2626;
+  --font-display:
+    "SF Pro Display", "SF Pro Icons", "Helvetica Neue", Helvetica, Arial, sans-serif;
+  --font-body:
+    "SF Pro Text", "SF Pro Icons", "Helvetica Neue", Helvetica, Arial, sans-serif;
+  --font-mono:
+    "SF Mono", ui-monospace, "JetBrains Mono", Menlo, Monaco, Consolas, monospace;
+  --text-xs:   12px;
+  --text-sm:   14px;
+  --text-base: 17px;
+  --text-lg:   21px;
+  --text-xl:   28px;
+  --text-2xl:  40px;
+  --text-3xl:  56px;
+  --text-4xl:  80px;
+  --leading-body:  1.47;
+  --leading-tight: 1.05;
+  --tracking-display: -0.015em;
+  --space-1:  4px;
+  --space-2:  8px;
+  --space-3:  12px;
+  --space-4:  16px;
+  --space-5:  20px;
+  --space-6:  24px;
+  --space-8:  32px;
+  --space-12: 48px;
+  --section-y-desktop: 100px;
+  --section-y-tablet:  64px;
+  --section-y-phone:   40px;
+  --radius-sm:   8px;
+  --radius-md:   12px;
+  --radius-lg:   18px;
+  --radius-pill: 980px;
+  --elev-flat:   none;
+  --elev-ring:   0 0 0 1px var(--border);
+  --elev-raised: 0 12px 32px rgba(0, 0, 0, 0.08);
+  --focus-ring: 0 0 0 4px rgba(0, 113, 227, 0.35);
+  --motion-fast:   150ms;
+  --motion-base:   220ms;
+  --ease-standard: cubic-bezier(0.28, 0, 0.22, 1);
+  --container-max:            1024px;
+  --container-gutter-desktop: 22px;
+  --container-gutter-tablet:  18px;
+  --container-gutter-phone:   16px;
+
+  /* Dark-surface (night) palette values consumed by the night skin. */
+  --night-bg:      #000000;
+  --night-surface: #1d1d1f;
+  --night-fg:      #f5f5f7;
+  --night-muted:   #86868b;
+  --night-border:  #2a2a2c;
+  --night-accent:  #2997ff;
+
+  /* Fixed ink / overlay colors (canvas, on-dark, on-light, dawn gradient). */
+  --ink-0:        #000000;
+  --ink-on-dark:  #ffffff;
+  --ink-on-light: #1d1d1f;
+  --dawn-1:       #f2a65a;
+  --dawn-2:       #7c4a1e;
+  --dawn-3:       #1d1006;
+
+  /* Flip-face depth: a top hinge highlight and a bottom seam shadow. */
+  --edge-hi: rgba(255,255,255,0.10);
+  --edge-lo: rgba(0,0,0,0.30);
+
+  /* On-dark controls (alarm overlay) and control shadows. Hoisted here so
+   * no raw rgba is written outside :root (design-system contract). */
+  --on-dark-wash: rgba(255,255,255,0.14);
+  --on-dark-line: rgba(255,255,255,0.45);
+  --on-dark-ring: rgba(255,255,255,0.5);
+  --shadow-knob:  0 1px 3px rgba(0,0,0,0.25);
+  --shadow-thumb: 0 1px 4px rgba(0,0,0,0.3);
+
+  /* ── Clock theme palettes ────────────────────────────────────────────
+   * Six curated presets. Values live inside :root so the contract
+   * "no raw hex outside :root" holds; the .th-* classes below bind each
+   * set into the standard token names (--bg, --surface, --fg, --accent…).
+   * Each preset is a whole look: palette, clock face and ambient field. */
+  /* Paper — minimal, light */
+  --th-paper-bg:#ffffff;        --th-paper-surface:#f5f5f7;    --th-paper-fg:#1d1d1f;
+  --th-paper-muted:#6e6e73;     --th-paper-border:#d2d2d7;     --th-paper-accent:#0071e3;
+  --th-paper-accent-on:#ffffff; --th-paper-accent-lift:#0077ed;
+  /* Midnight — sophisticated, dark, thin */
+  --th-midnight-bg:#000000;     --th-midnight-surface:#121214; --th-midnight-fg:#f5f5f7;
+  --th-midnight-muted:#7d7d82;  --th-midnight-border:#26262a;  --th-midnight-accent:#2f9bff;
+  --th-midnight-accent-on:#000000; --th-midnight-accent-lift:#4fabff; --th-midnight-2:#2f9bff;
+  /* Split-flap — flip clock, warm cream tiles on a dark board */
+  --th-splitflap-bg:#17130d;    --th-splitflap-surface:#241d13; --th-splitflap-fg:#f6ecd7;
+  --th-splitflap-muted:#b09a72; --th-splitflap-border:#352b1c;  --th-splitflap-accent:#e8b04b;
+  --th-splitflap-accent-on:#17130d; --th-splitflap-accent-lift:#f0bd60; --th-splitflap-2:#e8b04b;
+  /* Neon Stage — pop-poster energy, plum + magenta + cyan */
+  --th-neon-bg:#140726;         --th-neon-surface:#1e0e37;     --th-neon-fg:#ffffff;
+  --th-neon-muted:#b79ad6;      --th-neon-border:#3a1f5e;      --th-neon-accent:#ff3d9a;
+  --th-neon-accent-on:#1a0620;  --th-neon-accent-lift:#ff5aa6; --th-neon-2:#38e8ff;
+  /* Blade — ink + crimson, a steely action accent */
+  --th-blade-bg:#08090c;        --th-blade-surface:#14161c;    --th-blade-fg:#f1f2f6;
+  --th-blade-muted:#8a8f9c;     --th-blade-border:#23262f;     --th-blade-accent:#e11d2f;
+  --th-blade-accent-on:#ffffff; --th-blade-accent-lift:#f2303f; --th-blade-2:#f5a623;
+  /* Arcade — retro phosphor green, for the youngest player */
+  --th-arcade-bg:#060912;       --th-arcade-surface:#0d1420;   --th-arcade-fg:#e6fff0;
+  --th-arcade-muted:#6f9e86;    --th-arcade-border:#16233a;    --th-arcade-accent:#38f08a;
+  --th-arcade-accent-on:#052012; --th-arcade-accent-lift:#5cf5a2; --th-arcade-2:#38f0e0;
+  /* Flip — Ivory: a daylight flip board, ink tiles on a warm light wall */
+  --th-ivory-bg:#e9e5da;        --th-ivory-surface:#fbfaf6;    --th-ivory-fg:#232220;
+  --th-ivory-muted:#6f6d63;     --th-ivory-border:#d3cec1;     --th-ivory-accent:#0f766e;
+  --th-ivory-accent-on:#ffffff; --th-ivory-accent-lift:#12907f; --th-ivory-2:#0f766e;
+  /* Ambient washes — the fixed glow/stripe fields behind each preset */
+  --glow-fade: rgba(0,0,0,0);
+  --th-midnight-glow: rgba(47,155,255,0.12);
+  --th-splitflap-glow: rgba(232,176,75,0.14);
+  --th-neon-glow1: rgba(255,61,154,0.24);   --th-neon-glow2: rgba(56,232,255,0.20);
+  --th-blade-glow: rgba(225,29,47,0.10);    --th-blade-glow2: rgba(225,29,47,0.18);
+  --th-arcade-scan: rgba(56,240,138,0.055); --th-arcade-glow: rgba(56,240,138,0.12);
+}
+
+/* ── Clock themes ─────────────────────────────────────────────────────
+ * Each theme binds one curated palette into the standard token names, so
+ * every component above follows automatically. Same token names only —
+ * nothing new — just remapped per preset. `.is-dark` marks the presets
+ * that want the calm, chrome-light night treatment. */
+.th-paper { --bg:var(--th-paper-bg); --surface:var(--th-paper-surface); --fg:var(--th-paper-fg); --muted:var(--th-paper-muted); --border:var(--th-paper-border); --accent:var(--th-paper-accent); --accent-on:var(--th-paper-accent-on); --accent-hover:var(--th-paper-accent-lift); --accent-active:var(--th-paper-accent); }
+.th-midnight { --bg:var(--th-midnight-bg); --surface:var(--th-midnight-surface); --fg:var(--th-midnight-fg); --muted:var(--th-midnight-muted); --border:var(--th-midnight-border); --accent:var(--th-midnight-accent); --accent-on:var(--th-midnight-accent-on); --accent-hover:var(--th-midnight-accent-lift); --accent-active:var(--th-midnight-accent); }
+.th-splitflap { --bg:var(--th-splitflap-bg); --surface:var(--th-splitflap-surface); --fg:var(--th-splitflap-fg); --muted:var(--th-splitflap-muted); --border:var(--th-splitflap-border); --accent:var(--th-splitflap-accent); --accent-on:var(--th-splitflap-accent-on); --accent-hover:var(--th-splitflap-accent-lift); --accent-active:var(--th-splitflap-accent); }
+.th-neon { --bg:var(--th-neon-bg); --surface:var(--th-neon-surface); --fg:var(--th-neon-fg); --muted:var(--th-neon-muted); --border:var(--th-neon-border); --accent:var(--th-neon-accent); --accent-on:var(--th-neon-accent-on); --accent-hover:var(--th-neon-accent-lift); --accent-active:var(--th-neon-accent); }
+.th-blade { --bg:var(--th-blade-bg); --surface:var(--th-blade-surface); --fg:var(--th-blade-fg); --muted:var(--th-blade-muted); --border:var(--th-blade-border); --accent:var(--th-blade-accent); --accent-on:var(--th-blade-accent-on); --accent-hover:var(--th-blade-accent-lift); --accent-active:var(--th-blade-accent); }
+.th-arcade { --bg:var(--th-arcade-bg); --surface:var(--th-arcade-surface); --fg:var(--th-arcade-fg); --muted:var(--th-arcade-muted); --border:var(--th-arcade-border); --accent:var(--th-arcade-accent); --accent-on:var(--th-arcade-accent-on); --accent-hover:var(--th-arcade-accent-lift); --accent-active:var(--th-arcade-accent); }
+.th-ivory { --bg:var(--th-ivory-bg); --surface:var(--th-ivory-surface); --fg:var(--th-ivory-fg); --muted:var(--th-ivory-muted); --border:var(--th-ivory-border); --accent:var(--th-ivory-accent); --accent-on:var(--th-ivory-accent-on); --accent-hover:var(--th-ivory-accent-lift); --accent-active:var(--th-ivory-accent); }
+
+/* Ambient field: a fixed, non-interactive wash behind everything. Kept
+ * low-opacity on purpose so it never lowers text contrast. One flourish
+ * per preset; Paper and the flip board stay clean. */
+.ambient { position: fixed; top:0; left:0; right:0; bottom:0; background: transparent; pointer-events: none; -webkit-transition: background 1.6s var(--ease-standard); transition: background 1.6s var(--ease-standard); }
+.th-midnight .ambient { background: -webkit-radial-gradient(120% 80% at 50% -8%, var(--th-midnight-glow), var(--glow-fade) 58%); background: radial-gradient(120% 80% at 50% -8%, var(--th-midnight-glow), var(--glow-fade) 58%); }
+.th-splitflap .ambient { background: -webkit-radial-gradient(120% 90% at 50% 118%, var(--th-splitflap-glow), var(--glow-fade) 58%); background: radial-gradient(120% 90% at 50% 118%, var(--th-splitflap-glow), var(--glow-fade) 58%); }
+.th-neon .ambient { background: -webkit-radial-gradient(55% 45% at 12% 8%, var(--th-neon-glow1), var(--glow-fade) 62%), -webkit-radial-gradient(58% 48% at 88% 96%, var(--th-neon-glow2), var(--glow-fade) 62%); background: radial-gradient(55% 45% at 12% 8%, var(--th-neon-glow1), var(--glow-fade) 62%), radial-gradient(58% 48% at 88% 96%, var(--th-neon-glow2), var(--glow-fade) 62%); }
+.th-blade .ambient { background: -webkit-linear-gradient(118deg, var(--glow-fade) 46%, var(--th-blade-glow) 46.4%, var(--glow-fade) 47%), -webkit-radial-gradient(90% 60% at 100% 100%, var(--th-blade-glow2), var(--glow-fade) 60%); background: linear-gradient(118deg, var(--glow-fade) 46%, var(--th-blade-glow) 46.4%, var(--glow-fade) 47%), radial-gradient(90% 60% at 100% 100%, var(--th-blade-glow2), var(--glow-fade) 60%); }
+.th-arcade .ambient { background: -webkit-repeating-linear-gradient(0deg, var(--th-arcade-scan) 0, var(--th-arcade-scan) 1px, var(--glow-fade) 1px, var(--glow-fade) 3px), -webkit-radial-gradient(100% 70% at 50% 120%, var(--th-arcade-glow), var(--glow-fade) 60%); background: repeating-linear-gradient(0deg, var(--th-arcade-scan) 0, var(--th-arcade-scan) 1px, var(--glow-fade) 1px, var(--glow-fade) 3px), radial-gradient(100% 70% at 50% 120%, var(--th-arcade-glow), var(--glow-fade) 60%); }
+
+/* ── Base ─────────────────────────────────────────────────────────── */
+* { box-sizing: border-box; -webkit-tap-highlight-color: transparent; }
+html, body { margin: 0; padding: 0; height: 100%; }
+body {
+  font-family: -apple-system, BlinkMacSystemFont, var(--font-body);
+  background-color: var(--bg);
+  color: var(--fg);
+  overflow: hidden;
+  -webkit-user-select: none; user-select: none;
+  -webkit-touch-callout: none;
+  touch-action: manipulation;
+  -webkit-transition: background-color 1.6s var(--ease-standard), color 1.6s var(--ease-standard);
+  transition: background-color 1.6s var(--ease-standard), color 1.6s var(--ease-standard);
+}
+button, input, select { font-family: inherit; color: inherit; }
+[hidden] { display: none !important; }
+
+/* ── Stage ────────────────────────────────────────────────────────── */
+.stage {
+  position: fixed; top: 0; left: 0; right: 0; bottom: 0;
+  height: 100%;
+  display: -webkit-flex; display: flex;
+  -webkit-flex-direction: column; flex-direction: column;
+  padding: 3vmin 4vmin calc(3vmin + env(safe-area-inset-bottom, 0px));
+  -webkit-transition: -webkit-transform 2.4s ease-in-out, transform 2.4s ease-in-out;
+  transition: transform 2.4s ease-in-out;
+}
+.topbar {
+  display: -webkit-flex; display: flex;
+  -webkit-align-items: center; align-items: center;
+  -webkit-justify-content: space-between; justify-content: space-between;
+  min-height: 44px;
+  -webkit-flex: 0 0 auto; flex: 0 0 auto;
+}
+.greeting { font-size: 2.4vmin; font-weight: 600; letter-spacing: 0.01em; color: var(--muted); -webkit-transition: color 1.2s var(--ease-standard); transition: color 1.2s var(--ease-standard); }
+.iconbtn {
+  -webkit-appearance: none; appearance: none;
+  position: relative;
+  width: 44px; height: 44px; border: none; border-radius: 50%;
+  background: transparent; color: var(--muted);
+  display: -webkit-flex; display: flex;
+  -webkit-align-items: center; align-items: center; -webkit-justify-content: center; justify-content: center;
+  opacity: 0.55; cursor: pointer;
+  -webkit-transition: opacity var(--motion-base) var(--ease-standard), background-color var(--motion-base) var(--ease-standard);
+  transition: opacity var(--motion-base) var(--ease-standard), background-color var(--motion-base) var(--ease-standard);
+}
+.iconbtn:hover, .iconbtn:active { opacity: 1; background-color: var(--surface); }
+.iconbtn:focus { outline: none; box-shadow: var(--focus-ring); }
+.iconbtn svg { width: 22px; height: 22px; display: block; }
+
+/* ── Clock core ───────────────────────────────────────────────────── */
+.core {
+  -webkit-flex: 1 1 auto; flex: 1 1 auto;
+  display: -webkit-flex; display: flex;
+  -webkit-flex-direction: column; flex-direction: column;
+  -webkit-align-items: center; align-items: center;
+  -webkit-justify-content: center; justify-content: center;
+  min-height: 0;
+}
+.weekstrip { display: -webkit-flex; display: flex; -webkit-justify-content: center; justify-content: center; margin-bottom: 2.4vmin; }
+.weekstrip span {
+  font-size: 1.9vmin; font-weight: 600; letter-spacing: 0.05em;
+  color: var(--muted); opacity: 0.7;
+  width: 4.4vmin; height: 4.4vmin; line-height: 4.4vmin;
+  text-align: center; margin: 0 0.4vmin; border-radius: 50%;
+  -webkit-transition: color var(--motion-base) var(--ease-standard), background-color var(--motion-base) var(--ease-standard), opacity var(--motion-base) var(--ease-standard);
+  transition: color var(--motion-base) var(--ease-standard), background-color var(--motion-base) var(--ease-standard), opacity var(--motion-base) var(--ease-standard);
+}
+.weekstrip span.is-today { color: var(--accent-on); background-color: var(--accent); opacity: 1; }
+.dow { font-size: 5.6vmin; font-weight: 600; line-height: 1.05; letter-spacing: var(--tracking-display); margin-bottom: 0.6vmin; }
+.clockrow {
+  display: -webkit-flex; display: flex;
+  -webkit-align-items: flex-start; align-items: flex-start;
+  -webkit-justify-content: center; justify-content: center;
+  line-height: 0.86;
+}
+.time {
+  font-size: 27vmin; font-weight: 600; letter-spacing: -0.02em;
+  font-variant-numeric: tabular-nums;
+  -webkit-font-feature-settings: "tnum" 1; font-feature-settings: "tnum" 1;
+  display: inline-block;
+}
+.secwrap {
+  display: -webkit-flex; display: flex;
+  -webkit-flex-direction: column; flex-direction: column;
+  -webkit-align-items: flex-start; align-items: flex-start;
+  margin-left: 1.6vmin; padding-top: 2vmin; line-height: 1;
+}
+.seconds { font-size: 7vmin; font-weight: 500; color: var(--muted); font-variant-numeric: tabular-nums; -webkit-font-feature-settings: "tnum" 1; font-feature-settings: "tnum" 1; }
+.meridiem { font-size: 3.4vmin; font-weight: 600; letter-spacing: 0.06em; color: var(--muted); margin-top: 1.4vmin; text-transform: uppercase; }
+.dateline { font-size: 3.2vmin; font-weight: 400; color: var(--muted); margin-top: 2.4vmin; letter-spacing: 0.005em; }
+
+/* ── Cards ────────────────────────────────────────────────────────── */
+.cards {
+  -webkit-flex: 0 0 auto; flex: 0 0 auto;
+  display: -webkit-flex; display: flex;
+  -webkit-justify-content: center; justify-content: center;
+  -webkit-flex-wrap: wrap; flex-wrap: wrap;
+  padding-bottom: 1vmin;
+}
+.card {
+  display: -webkit-flex; display: flex;
+  -webkit-align-items: center; align-items: center;
+  background-color: var(--surface);
+  border-radius: var(--radius-lg);
+  padding: 2.2vmin 2.8vmin;
+  margin: 0.8vmin 0.8vmin 0;
+  min-height: 44px;
+  -webkit-transition: background-color 1.2s var(--ease-standard);
+  transition: background-color 1.2s var(--ease-standard);
+}
+.card-ico { width: 3.4vmin; height: 3.4vmin; margin-right: 1.6vmin; color: var(--muted); -webkit-flex: 0 0 auto; flex: 0 0 auto; }
+.card-ico svg { width: 100%; height: 100%; display: block; }
+.card-txt { display: -webkit-flex; display: flex; -webkit-flex-direction: column; flex-direction: column; }
+.card-kicker { font-size: 1.7vmin; font-weight: 600; letter-spacing: 0.08em; text-transform: uppercase; color: var(--muted); }
+.card-value { font-size: 2.6vmin; font-weight: 600; margin-top: 0.3vmin; white-space: nowrap; }
+.card-sub { font-size: 1.9vmin; color: var(--muted); margin-top: 0.2vmin; white-space: nowrap; }
+.card.is-festival { background-color: var(--accent); }
+.card.is-festival .card-kicker, .card.is-festival .card-sub, .card.is-festival .card-ico { color: var(--accent-on); opacity: 0.85; }
+.card.is-festival .card-value { color: var(--accent-on); }
+.is-dark .card { background-color: transparent; padding: 0; margin-top: 0.4vmin; }
+.is-dark .card--quiet { display: none; }
+.is-dark .card-ico, .is-dark .card-kicker, .is-dark .card-sub { opacity: 0.85; }
+.is-dark .cards { -webkit-flex-direction: column; flex-direction: column; -webkit-align-items: center; align-items: center; }
+
+/* Night dimmer: the web cannot lower an LCD backlight, so a dark overlay
+ * approximates a softer night. Strength is a user setting. */
+.dimmer { position: fixed; top: 0; left: 0; right: 0; bottom: 0; background: var(--ink-0); opacity: 0; pointer-events: none; z-index: 40; -webkit-transition: opacity 1.6s var(--ease-standard); transition: opacity 1.6s var(--ease-standard); }
+
+/* ── Boot overlay ─────────────────────────────────────────────────── */
+.boot {
+  position: fixed; top: 0; left: 0; right: 0; bottom: 0; z-index: 80;
+  background: var(--ink-0); color: var(--night-fg);
+  display: -webkit-flex; display: flex;
+  -webkit-flex-direction: column; flex-direction: column;
+  -webkit-align-items: center; align-items: center; -webkit-justify-content: center; justify-content: center;
+  cursor: pointer; text-align: center; padding: 8vmin;
+}
+.boot h1 { font-size: 6vmin; font-weight: 600; letter-spacing: var(--tracking-display); margin: 0; }
+.boot p { font-size: 2.6vmin; color: var(--night-muted); margin: 2vmin 0 0; max-width: 46ch; line-height: 1.5; }
+.boot .pulse { margin-top: 5vmin; font-size: 2.2vmin; letter-spacing: 0.18em; text-transform: uppercase; color: var(--night-accent); -webkit-animation: bp 2.4s var(--ease-standard) infinite; animation: bp 2.4s var(--ease-standard) infinite; }
+@-webkit-keyframes bp { 0%,100% { opacity: 0.35; } 50% { opacity: 1; } }
+@keyframes bp { 0%,100% { opacity: 0.35; } 50% { opacity: 1; } }
+.boot.is-hidden { display: none; }
+
+/* ── Alarm overlay ────────────────────────────────────────────────── */
+.alarm {
+  position: fixed; top: 0; left: 0; right: 0; bottom: 0; z-index: 70;
+  display: none;
+  -webkit-flex-direction: column; flex-direction: column;
+  -webkit-align-items: center; align-items: center; -webkit-justify-content: center; justify-content: center;
+  color: var(--ink-on-dark); text-align: center; padding: 8vmin;
+  background: -webkit-radial-gradient(circle at 50% 120%, var(--dawn-1) 0%, var(--dawn-2) 34%, var(--dawn-3) 72%, var(--ink-0) 100%);
+  background: radial-gradient(circle at 50% 120%, var(--dawn-1) 0%, var(--dawn-2) 34%, var(--dawn-3) 72%, var(--ink-0) 100%);
+  -webkit-animation: sunrise 22s ease-out both; animation: sunrise 22s ease-out both;
+}
+.alarm.is-open { display: -webkit-flex; display: flex; }
+@-webkit-keyframes sunrise { from { -webkit-filter: brightness(0.25); filter: brightness(0.25); } to { -webkit-filter: brightness(1); filter: brightness(1); } }
+@keyframes sunrise { from { filter: brightness(0.25); } to { filter: brightness(1); } }
+.alarm-kicker { font-size: 2.6vmin; font-weight: 600; letter-spacing: 0.22em; text-transform: uppercase; opacity: 0.85; }
+.alarm-time { font-size: 20vmin; font-weight: 600; line-height: 0.9; margin: 2vmin 0; font-variant-numeric: tabular-nums; }
+.alarm-label { font-size: 4vmin; font-weight: 600; margin-bottom: 6vmin; }
+.alarm-actions { display: -webkit-flex; display: flex; -webkit-align-items: center; align-items: center; -webkit-justify-content: center; justify-content: center; }
+.abtn { -webkit-appearance: none; appearance: none; cursor: pointer; font-size: 2.8vmin; font-weight: 600; padding: 1.8vmin 5vmin; min-height: 56px; border-radius: var(--radius-pill); border: none; margin: 0 1.4vmin; }
+.abtn-primary { background: var(--ink-on-dark); color: var(--ink-on-light); }
+.abtn-ghost { background: var(--on-dark-wash); color: var(--ink-on-dark); border: 1px solid var(--on-dark-line); }
+.abtn:focus { outline: none; box-shadow: 0 0 0 4px var(--on-dark-ring); }
+
+/* ── Settings sheet ───────────────────────────────────────────────── */
+.sheet { position: fixed; top: 0; left: 0; right: 0; bottom: 0; z-index: 90; display: none; background-color: var(--bg); color: var(--fg); overflow-y: auto; -webkit-overflow-scrolling: touch; }
+.sheet.is-open { display: block; }
+.sheet-inner { max-width: 720px; margin: 0 auto; padding: 5vmin 4vmin 14vmin; }
+.sheet-head { display: -webkit-flex; display: flex; -webkit-align-items: center; align-items: center; -webkit-justify-content: space-between; justify-content: space-between; margin-bottom: 4vmin; }
+.sheet-head h2 { font-size: 3.6vmin; font-weight: 600; margin: 0; letter-spacing: var(--tracking-display); }
+.sect { margin-bottom: 5vmin; }
+.sect > h3 { font-size: 2vmin; font-weight: 600; letter-spacing: 0.1em; text-transform: uppercase; color: var(--muted); margin: 0 0 1.6vmin; }
+.row { display: -webkit-flex; display: flex; -webkit-align-items: center; align-items: center; -webkit-justify-content: space-between; justify-content: space-between; padding: 1.6vmin 0; border-bottom: 1px solid var(--border); }
+.row:last-child { border-bottom: none; }
+.row-label { font-size: 2.4vmin; font-weight: 500; }
+.row-help { font-size: 1.9vmin; color: var(--muted); margin-top: 0.4vmin; max-width: 42ch; line-height: 1.4; }
+.row-ctl { -webkit-flex: 0 0 auto; flex: 0 0 auto; margin-left: 2vmin; }
+input[type="text"], input[type="time"], input[type="date"] {
+  -webkit-appearance: none; appearance: none; font-size: 2.4vmin; padding: 1.4vmin 1.8vmin; min-height: 44px;
+  border-radius: var(--radius-sm); border: 1px solid var(--border); background-color: var(--surface); color: var(--fg);
+}
+input:focus { outline: none; box-shadow: var(--focus-ring); border-color: var(--accent); }
+.seg { display: -webkit-inline-flex; display: inline-flex; background-color: var(--surface); border-radius: var(--radius-sm); padding: 3px; }
+.seg button { -webkit-appearance: none; appearance: none; border: none; background: transparent; cursor: pointer; font-size: 2.1vmin; font-weight: 600; color: var(--muted); padding: 1.2vmin 2.4vmin; min-height: 44px; border-radius: 6px; }
+.seg button.is-on { background-color: var(--accent); color: var(--accent-on); }
+.seg button:focus { outline: none; box-shadow: var(--focus-ring); }
+.switch { -webkit-appearance: none; appearance: none; width: 52px; height: 32px; border-radius: 16px; background-color: var(--border); position: relative; cursor: pointer; -webkit-transition: background-color var(--motion-base); transition: background-color var(--motion-base); border: none; }
+.switch::after { content: ""; position: absolute; top: 2px; left: 2px; width: 28px; height: 28px; border-radius: 50%; background: var(--ink-on-dark); box-shadow: var(--shadow-knob); -webkit-transition: -webkit-transform var(--motion-base) var(--ease-standard), transform var(--motion-base) var(--ease-standard); transition: transform var(--motion-base) var(--ease-standard); }
+.switch.is-on { background-color: var(--accent); }
+.switch.is-on::after { -webkit-transform: translateX(20px); transform: translateX(20px); }
+.switch:focus { outline: none; box-shadow: var(--focus-ring); }
+input[type="range"] { -webkit-appearance: none; appearance: none; width: 150px; height: 4px; border-radius: 2px; background: var(--border); }
+input[type="range"]::-webkit-slider-thumb { -webkit-appearance: none; width: 26px; height: 26px; border-radius: 50%; background: var(--ink-on-dark); box-shadow: var(--shadow-thumb); border: 1px solid var(--border); }
+.btn { -webkit-appearance: none; appearance: none; border: none; cursor: pointer; font-size: 2.1vmin; font-weight: 600; padding: 1.4vmin 2.6vmin; min-height: 44px; border-radius: var(--radius-pill); }
+.btn-primary { background-color: var(--accent); color: var(--accent-on); }
+.btn-primary:hover { background-color: var(--accent-hover); }
+.btn-primary:active { background-color: var(--accent-active); }
+.btn-quiet { background-color: var(--surface); color: var(--fg); border: 1px solid var(--border); }
+.btn-danger { background-color: transparent; color: var(--danger); border: 1px solid var(--border); }
+.btn:focus { outline: none; box-shadow: var(--focus-ring); }
+.alarmrow { background-color: var(--surface); border-radius: var(--radius-lg); padding: 2vmin 2.4vmin; margin-bottom: 1.6vmin; }
+.alarmrow-top { display: -webkit-flex; display: flex; -webkit-align-items: center; align-items: center; -webkit-justify-content: space-between; justify-content: space-between; }
+.alarmrow-time { font-size: 3.4vmin; font-weight: 600; font-variant-numeric: tabular-nums; }
+.alarmrow-label { font-size: 2vmin; color: var(--muted); margin-top: 0.4vmin; }
+.alarm-head-right { display: -webkit-flex; display: flex; -webkit-align-items: center; align-items: center; }
+.daysrow { display: -webkit-flex; display: flex; margin-top: 1.4vmin; }
+.daybtn { -webkit-appearance: none; appearance: none; cursor: pointer; border: 1px solid var(--border); background: var(--bg); color: var(--muted); font-size: 1.8vmin; font-weight: 600; width: 44px; height: 44px; border-radius: 50%; margin-right: 0.8vmin; }
+.daybtn.is-on { background: var(--accent); color: var(--accent-on); border-color: var(--accent); }
+.daybtn:focus { outline: none; box-shadow: var(--focus-ring); }
+.holidayrow { display: -webkit-flex; display: flex; -webkit-align-items: center; align-items: center; -webkit-justify-content: space-between; justify-content: space-between; padding: 1.2vmin 0; border-bottom: 1px solid var(--border); }
+.holidayrow input { border: none; background: transparent; padding: 0.6vmin 0.4vmin; min-height: 44px; }
+.holidayrow input:focus { box-shadow: none; border-bottom: 1px solid var(--accent); border-radius: 0; }
+.holidayrow .hname { -webkit-flex: 1 1 auto; flex: 1 1 auto; font-size: 2.2vmin; }
+.holidayrow .hdate { -webkit-flex: 0 0 auto; flex: 0 0 auto; font-size: 2vmin; color: var(--muted); width: 46%; }
+
+/* ── Theme gallery (settings) ─────────────────────────────────────── */
+.tgrid { display: grid; grid-template-columns: repeat(2, 1fr); gap: 2vmin; }
+@media (min-width: 700px) { .tgrid { grid-template-columns: repeat(3, 1fr); } }
+.tcard { -webkit-appearance: none; appearance: none; cursor: pointer; text-align: left; padding: 0; border: 1px solid var(--border); border-radius: var(--radius-lg); overflow: hidden; background-color: var(--bg); color: var(--fg);
+  -webkit-transition: border-color var(--motion-base) var(--ease-standard), box-shadow var(--motion-base) var(--ease-standard); transition: border-color var(--motion-base) var(--ease-standard), box-shadow var(--motion-base) var(--ease-standard); }
+.tcard:focus { outline: none; box-shadow: var(--focus-ring); }
+.tcard.is-on { border-color: var(--accent); box-shadow: 0 0 0 2px var(--accent); }
+.tprev { position: relative; display: -webkit-flex; display: flex; -webkit-align-items: center; align-items: center; -webkit-justify-content: center; justify-content: center; height: 68px; background-color: var(--bg); color: var(--fg); font-size: 27px; font-weight: 600; letter-spacing: -0.02em; font-variant-numeric: tabular-nums; }
+.tprev .tdot { width: 9px; height: 9px; border-radius: 50%; background-color: var(--accent); margin-right: 8px; -webkit-flex: 0 0 auto; flex: 0 0 auto; }
+.tprev .tseg { background-color: var(--surface); border: 1px solid var(--border); border-radius: 5px; padding: 2px 6px; margin: 0 2px; }
+.tmeta { padding: 1.4vmin 1.8vmin 1.8vmin; border-top: 1px solid var(--border); }
+.tname { display: block; font-size: 2.2vmin; font-weight: 600; }
+.thint { display: block; font-size: 1.7vmin; color: var(--muted); margin-top: 0.2vmin; }
+
+/* ── Parental lock ─────────────────────────────────────────────────
+ * A PIN gate in front of Settings only. The clock, the alarm and the
+ * snooze button stay available to the child; the gear is not. */
+.lockdot {
+  position: absolute; right: 6px; bottom: 6px;
+  width: 15px; height: 15px; border-radius: 50%;
+  background-color: var(--accent); color: var(--accent-on);
+  display: none;
+  -webkit-align-items: center; align-items: center;
+  -webkit-justify-content: center; justify-content: center;
+}
+body.is-locked .lockdot { display: -webkit-flex; display: flex; }
+.lockdot svg { width: 9px; height: 9px; display: block; }
+
+.lockscreen {
+  position: fixed; top: 0; left: 0; right: 0; bottom: 0; z-index: 120;
+  background-color: var(--bg); color: var(--fg);
+  display: none;
+  -webkit-flex-direction: column; flex-direction: column;
+  -webkit-align-items: center; align-items: center;
+  -webkit-justify-content: center; justify-content: center;
+  padding: 5vmin 4vmin calc(5vmin + env(safe-area-inset-bottom, 0px));
+  overflow-y: auto; -webkit-overflow-scrolling: touch;
+  text-align: center;
+}
+.lockscreen.is-open { display: -webkit-flex; display: flex; }
+.lock-badge {
+  width: 64px; height: 64px; border-radius: 50%;
+  background-color: var(--surface); color: var(--muted);
+  display: -webkit-flex; display: flex;
+  -webkit-align-items: center; align-items: center; -webkit-justify-content: center; justify-content: center;
+  margin-bottom: 3.4vmin;
+}
+.lock-badge svg { width: 30px; height: 30px; display: block; }
+.lock-title { font-size: 4.4vmin; font-weight: 600; letter-spacing: var(--tracking-display); }
+.lock-sub { font-size: 2.4vmin; color: var(--muted); margin-top: 1.2vmin; min-height: 3em; max-width: 32ch; line-height: 1.4; -webkit-transition: color var(--motion-fast) var(--ease-standard); transition: color var(--motion-fast) var(--ease-standard); }
+.lock-sub.is-error { color: var(--danger); }
+.pindots { display: -webkit-flex; display: flex; margin: 4vmin 0 6vmin; }
+.pindot {
+  width: 15px; height: 15px; border-radius: 50%; border: 2px solid var(--border); margin: 0 9px;
+  -webkit-transition: background-color var(--motion-fast) var(--ease-standard), border-color var(--motion-fast) var(--ease-standard);
+  transition: background-color var(--motion-fast) var(--ease-standard), border-color var(--motion-fast) var(--ease-standard);
+}
+.pindot.is-filled { background-color: var(--accent); border-color: var(--accent); }
+.pindots.is-error { -webkit-animation: pinshake .5s var(--ease-standard); animation: pinshake .5s var(--ease-standard); }
+@-webkit-keyframes pinshake { 10%,90% { -webkit-transform: translateX(-3px); } 20%,80% { -webkit-transform: translateX(5px); } 30%,50%,70% { -webkit-transform: translateX(-8px); } 40%,60% { -webkit-transform: translateX(8px); } }
+@keyframes pinshake { 10%,90% { transform: translateX(-3px); } 20%,80% { transform: translateX(5px); } 30%,50%,70% { transform: translateX(-8px); } 40%,60% { transform: translateX(8px); } }
+.keypad { display: grid; grid-template-columns: repeat(3, 1fr); gap: 2.4vmin; }
+.key {
+  -webkit-appearance: none; appearance: none; cursor: pointer;
+  width: 19vmin; height: 19vmin; max-width: 84px; max-height: 84px;
+  border-radius: 50%; border: none;
+  background-color: var(--surface); color: var(--fg);
+  font-size: 4.2vmin; font-weight: 600;
+  font-variant-numeric: tabular-nums;
+  display: -webkit-flex; display: flex;
+  -webkit-align-items: center; align-items: center; -webkit-justify-content: center; justify-content: center;
+  -webkit-transition: background-color var(--motion-fast) var(--ease-standard); transition: background-color var(--motion-fast) var(--ease-standard);
+}
+@media (min-width: 700px) { .key { font-size: 32px; } }
+.key:active { background-color: var(--border); }
+.key:focus { outline: none; box-shadow: var(--focus-ring); }
+.key.is-blank { visibility: hidden; pointer-events: none; }
+.key.is-soft { background-color: transparent; color: var(--muted); }
+.key.is-soft:active { background-color: var(--surface); }
+.key svg { width: 24px; height: 24px; display: block; }
+.lock-cancel { margin-top: 6vmin; }
+
+/* ── Flip clock face ──────────────────────────────────────────────── */
+.flipclock { --fcard-w: 21vmin; --fcard-h: 25vmin; --fdigit: 15.5vmin; display: none; -webkit-flex-direction: column; flex-direction: column; -webkit-align-items: center; align-items: center; }
+.face-flip .flipclock { display: -webkit-flex; display: flex; }
+.face-flip .clockrow { display: none; }
+.fliprow { display: -webkit-flex; display: flex; -webkit-align-items: center; align-items: center; -webkit-justify-content: center; justify-content: center; }
+.fcard { position: relative; width: var(--fcard-w); height: var(--fcard-h); margin: 0 0.9vmin; -webkit-perspective: 900px; perspective: 900px; }
+.fcard .fc-half { position: absolute; left: 0; right: 0; height: 50%; overflow: hidden; background-color: var(--surface); color: var(--fg); }
+.fcard .fc-half span,
+.fcard .fc-flap span { display: block; width: 100%; text-align: center; font-size: var(--fdigit); line-height: var(--fcard-h); font-weight: 600; font-variant-numeric: tabular-nums; -webkit-font-feature-settings: "tnum" 1; font-feature-settings: "tnum" 1; }
+.fcard .fc-top { top: 0; border-radius: var(--radius-md) var(--radius-md) 0 0; border-bottom: 1px solid var(--border); box-shadow: inset 0 1px 0 var(--edge-hi); }
+.fcard .fc-bottom { bottom: 0; border-radius: 0 0 var(--radius-md) var(--radius-md); box-shadow: inset 0 -1px 0 var(--edge-lo); }
+.fcard .fc-bottom span { margin-top: calc(var(--fcard-h) / -2); }
+.fcard .fc-flap { position: absolute; left: 0; right: 0; height: 50%; overflow: hidden; background-color: var(--surface); color: var(--fg); opacity: 0; z-index: 3; -webkit-backface-visibility: hidden; backface-visibility: hidden; }
+.fcard .fc-flap-front { top: 0; border-radius: var(--radius-md) var(--radius-md) 0 0; -webkit-transform-origin: bottom; transform-origin: bottom; }
+.fcard .fc-flap-back { bottom: 0; border-radius: 0 0 var(--radius-md) var(--radius-md); -webkit-transform-origin: top; transform-origin: top; }
+.fcard .fc-flap-back span { margin-top: calc(var(--fcard-h) / -2); }
+.fcard.is-flipping .fc-flap-front { opacity: 1; -webkit-animation: flipTop .30s ease-in both; animation: flipTop .30s ease-in both; }
+.fcard.is-flipping .fc-flap-back { opacity: 1; -webkit-animation: flipBottom .30s ease-out .15s both; animation: flipBottom .30s ease-out .15s both; }
+@-webkit-keyframes flipTop { from { -webkit-transform: rotateX(0deg); } to { -webkit-transform: rotateX(-90deg); } }
+@keyframes flipTop { from { transform: rotateX(0deg); } to { transform: rotateX(-90deg); } }
+@-webkit-keyframes flipBottom { from { -webkit-transform: rotateX(90deg); } to { -webkit-transform: rotateX(0deg); } }
+@keyframes flipBottom { from { transform: rotateX(90deg); } to { transform: rotateX(0deg); } }
+.fcolon { font-size: 9vmin; font-weight: 600; line-height: 1; color: var(--muted); margin: 0 0.4vmin; padding-bottom: 4vmin; -webkit-animation: colonblink 2s steps(1, end) infinite; animation: colonblink 2s steps(1, end) infinite; }
+@-webkit-keyframes colonblink { 0%, 49% { opacity: 1; } 50%, 100% { opacity: 0.28; } }
+@keyframes colonblink { 0%, 49% { opacity: 1; } 50%, 100% { opacity: 0.28; } }
+.fmeta { margin-top: 2vmin; font-size: 3.4vmin; font-weight: 500; letter-spacing: 0.12em; color: var(--muted); font-variant-numeric: tabular-nums; min-height: 1.2em; text-transform: uppercase; }
+
+@media (orientation: portrait) {
+  .time { font-size: 30vmin; }
+  .dow { font-size: 6.4vmin; }
+  .dateline { font-size: 3.6vmin; }
+  .card-value { font-size: 3vmin; }
+  .flipclock { --fcard-w: 18vmin; --fcard-h: 22vmin; --fdigit: 13.6vmin; }
+  .fcolon { font-size: 7.4vmin; padding-bottom: 3.2vmin; }
+  .fmeta { font-size: 3.2vmin; }
+}
+</style>
+</head>
+<body class="th-midnight is-dark face-digital is-booting">
+<div class="ambient" id="ambient" aria-hidden="true"></div>
+<div class="dimmer" id="dimmer" aria-hidden="true"></div>
+
+<div class="stage" id="stage">
+  <header class="topbar">
+    <div class="greeting" id="greeting" data-od-id="greeting">Good evening</div>
+    <button class="iconbtn" id="settingsBtn" type="button" aria-label="Settings" data-od-id="settings-open">
+      <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.7" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true">
+        <circle cx="12" cy="12" r="3.2"></circle>
+        <path d="M19.4 15a1.65 1.65 0 0 0 .33 1.82l.06.06a2 2 0 1 1-2.83 2.83l-.06-.06a1.65 1.65 0 0 0-1.82-.33 1.65 1.65 0 0 0-1 1.51V21a2 2 0 1 1-4 0v-.09A1.65 1.65 0 0 0 9 19.4a1.65 1.65 0 0 0-1.82.33l-.06.06a2 2 0 1 1-2.83-2.83l.06-.06a1.65 1.65 0 0 0 .33-1.82 1.65 1.65 0 0 0-1.51-1H3a2 2 0 1 1 0-4h.09A1.65 1.65 0 0 0 4.6 9a1.65 1.65 0 0 0-.33-1.82l-.06-.06a2 2 0 1 1 2.83-2.83l.06.06A1.65 1.65 0 0 0 9 4.6a1.65 1.65 0 0 0 1-1.51V3a2 2 0 1 1 4 0v.09a1.65 1.65 0 0 0 1 1.51 1.65 1.65 0 0 0 1.82-.33l.06-.06a2 2 0 1 1 2.83 2.83l-.06.06A1.65 1.65 0 0 0 19.4 9a1.65 1.65 0 0 0 1.51 1H21a2 2 0 1 1 0 4h-.09a1.65 1.65 0 0 0-1.51 1z"></path>
+      </svg>
+      <span class="lockdot" id="lockDot" aria-hidden="true">
+        <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.7" stroke-linecap="round" stroke-linejoin="round"><rect x="5" y="11" width="14" height="9" rx="2"></rect><path d="M8 11V8a4 4 0 0 1 8 0v3"></path></svg>
+      </span>
+    </button>
+  </header>
+
+  <main class="core" id="driftTarget">
+    <nav class="weekstrip" id="weekstrip" aria-label="Day of week" data-od-id="weekstrip"></nav>
+    <div class="dow" id="dow" data-od-id="day-of-week">Friday</div>
+    <div class="clockrow">
+      <span class="time" id="time" data-od-id="clock-time">--:--</span>
+      <span class="secwrap" aria-hidden="true">
+        <span class="seconds" id="seconds">00</span>
+        <span class="meridiem" id="meridiem">AM</span>
+      </span>
+    </div>
+    <div class="flipclock" id="flipclock" data-od-id="flip-clock" aria-hidden="true">
+      <div class="fliprow" id="fliprow"></div>
+      <div class="fmeta" id="fmeta"></div>
+    </div>
+    <div class="dateline" id="dateline" data-od-id="dateline">&mdash;</div>
+  </main>
+
+  <footer class="cards" id="cards">
+    <div class="card" id="cardAlarm" data-od-id="next-alarm-card">
+      <span class="card-ico" aria-hidden="true"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.7" stroke-linecap="round" stroke-linejoin="round"><path d="M18 8a6 6 0 0 0-12 0c0 7-3 9-3 9h18s-3-2-3-9"></path><path d="M13.7 21a2 2 0 0 1-3.4 0"></path></svg></span>
+      <span class="card-txt"><span class="card-kicker">Next alarm</span><span class="card-value" id="alarmValue">None set</span><span class="card-sub" id="alarmSub"></span></span>
+    </div>
+    <div class="card card--quiet" id="cardSchool" data-od-id="school-card">
+      <span class="card-ico" aria-hidden="true"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.7" stroke-linecap="round" stroke-linejoin="round"><path d="M22 10 12 5 2 10l10 5 10-5z"></path><path d="M6 12v5c0 1 2.7 3 6 3s6-2 6-3v-5"></path></svg></span>
+      <span class="card-txt"><span class="card-kicker">Tomorrow</span><span class="card-value" id="schoolValue">&mdash;</span><span class="card-sub" id="schoolSub"></span></span>
+    </div>
+    <div class="card card--quiet" id="cardBedtime" hidden data-od-id="bedtime-card">
+      <span class="card-ico" aria-hidden="true"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.7" stroke-linecap="round" stroke-linejoin="round"><path d="M21 12.8A9 9 0 1 1 11.2 3a7 7 0 0 0 9.8 9.8z"></path></svg></span>
+      <span class="card-txt"><span class="card-kicker">Bedtime</span><span class="card-value" id="bedtimeValue">&mdash;</span><span class="card-sub" id="bedtimeSub"></span></span>
+    </div>
+    <div class="card is-festival card--quiet" id="cardBirthday" hidden data-od-id="birthday-card">
+      <span class="card-ico" aria-hidden="true"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.7" stroke-linecap="round" stroke-linejoin="round"><path d="M20 21v-8H4v8"></path><path d="M2 21h20"></path><path d="M12 3v3"></path><path d="M12 8.5c.8-.6 1.5-1.3 1.5-2a1.5 1.5 0 0 0-3 0c0 .7.7 1.4 1.5 2z"></path></svg></span>
+      <span class="card-txt"><span class="card-kicker">Birthday</span><span class="card-value" id="birthdayValue">&mdash;</span><span class="card-sub" id="birthdaySub"></span></span>
+    </div>
+    <div class="card is-festival card--quiet" id="cardFestival" hidden data-od-id="festival-card">
+      <span class="card-ico" aria-hidden="true"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.7" stroke-linecap="round" stroke-linejoin="round"><path d="M12 3v4"></path><path d="M5 21c0-3 3-5 7-5s7 2 7 5z"></path><path d="M12 12c0 1.5-2 2-2 3.5S11 18 12 18s2-1 2-2.5S12 13.5 12 12z"></path></svg></span>
+      <span class="card-txt"><span class="card-kicker">Today</span><span class="card-value" id="festivalValue">&mdash;</span><span class="card-sub">Have a lovely day</span></span>
+    </div>
+  </footer>
+</div>
+
+<div class="alarm" id="alarmOverlay" role="dialog" aria-modal="true" aria-label="Alarm">
+  <div class="alarm-kicker" id="alarmKicker">Wake up</div>
+  <div class="alarm-time" id="alarmTime">--:--</div>
+  <div class="alarm-label" id="alarmLabel">Alarm</div>
+  <div class="alarm-actions">
+    <button class="abtn abtn-ghost" id="snoozeBtn" type="button">Snooze 5 min</button>
+    <button class="abtn abtn-primary" id="dismissBtn" type="button">I'm awake</button>
+  </div>
+</div>
+
+<div class="boot" id="bootOverlay" role="dialog" aria-modal="true" aria-label="Start">
+  <h1>Room Clock</h1>
+  <p>Tap anywhere once to start. Keep this iPad on the charger, then turn on Guided Access so the clock stays on all night.</p>
+  <div class="pulse">Tap to begin</div>
+</div>
+
+<div class="sheet" id="settingsSheet" role="dialog" aria-modal="true" aria-label="Settings">
+  <div class="sheet-inner">
+    <div class="sheet-head">
+      <h2>Settings</h2>
+      <button class="btn btn-primary" id="doneBtn" type="button" data-od-id="settings-done">Done</button>
+    </div>
+
+    <div class="sect">
+      <h3>Room</h3>
+      <div class="row">
+        <div><div class="row-label">Child's name</div><div class="row-help">Shown in the greeting. Leave blank for none.</div></div>
+        <div class="row-ctl"><input type="text" id="set-name" placeholder="Optional" maxlength="24" data-od-id="set-name"></div>
+      </div>
+      <div class="row">
+        <div><div class="row-label">Birthday</div><div class="row-help">Optional. Shows a countdown from 30 days out, then a greeting on the day.</div></div>
+        <div class="row-ctl"><input type="date" id="set-birthday" data-od-id="set-birthday"></div>
+      </div>
+    </div>
+
+    <div class="sect">
+      <h3>Clock style</h3>
+      <div class="row-help" style="margin-bottom:1.6vmin;">Pick a look. Each preset changes the colors, the type and the room's ambient light together. <strong>Split-flap</strong> and <strong>Flip &mdash; Ivory</strong> turn the time into flipping tiles.</div>
+      <div class="tgrid" id="themeGrid" data-od-id="theme-gallery">
+        <button class="tcard" type="button" data-theme="paper" data-od-id="theme-card-paper"><span class="tprev th-paper"><span class="tdot"></span>10:08</span><span class="tmeta"><span class="tname">Paper</span><span class="thint">Minimal &middot; light</span></span></button>
+        <button class="tcard" type="button" data-theme="midnight" data-od-id="theme-card-midnight"><span class="tprev th-midnight"><span class="tdot"></span>10:08</span><span class="tmeta"><span class="tname">Midnight</span><span class="thint">Calm &middot; sophisticated</span></span></button>
+        <button class="tcard" type="button" data-theme="splitflap" data-od-id="theme-card-splitflap"><span class="tprev tflip th-splitflap"><span class="tseg">10</span><span class="tseg">08</span></span><span class="tmeta"><span class="tname">Split-flap</span><span class="thint">Flip clock</span></span></button>
+        <button class="tcard" type="button" data-theme="ivory" data-od-id="theme-card-ivory"><span class="tprev tflip th-ivory"><span class="tseg">10</span><span class="tseg">08</span></span><span class="tmeta"><span class="tname">Flip &mdash; Ivory</span><span class="thint">Flip clock &middot; light</span></span></button>
+        <button class="tcard" type="button" data-theme="neon" data-od-id="theme-card-neon"><span class="tprev th-neon"><span class="tdot"></span>10:08</span><span class="tmeta"><span class="tname">Neon Stage</span><span class="thint">Pop &middot; bold</span></span></button>
+        <button class="tcard" type="button" data-theme="blade" data-od-id="theme-card-blade"><span class="tprev th-blade"><span class="tdot"></span>10:08</span><span class="tmeta"><span class="tname">Blade</span><span class="thint">Action &middot; ink &amp; crimson</span></span></button>
+        <button class="tcard" type="button" data-theme="arcade" data-od-id="theme-card-arcade"><span class="tprev th-arcade"><span class="tdot"></span>10:08</span><span class="tmeta"><span class="tname">Arcade</span><span class="thint">Retro &middot; phosphor</span></span></button>
+      </div>
+    </div>
+
+    <div class="sect">
+      <h3>Clock</h3>
+      <div class="row">
+        <div class="row-label">Time format</div>
+        <div class="row-ctl"><div class="seg" id="set-format" data-od-id="set-format"><button type="button" data-v="12">12-hour</button><button type="button" data-v="24">24-hour</button></div></div>
+      </div>
+      <div class="row">
+        <div class="row-label">Show seconds</div>
+        <div class="row-ctl"><button class="switch" id="set-seconds" type="button" role="switch" aria-checked="false" aria-label="Show seconds" data-od-id="set-seconds"></button></div>
+      </div>
+      <div class="row">
+        <div><div class="row-label">Night dimming</div><div class="row-help">Softens the screen at night. A web page cannot lower the backlight, so this is a gentle overlay.</div></div>
+        <div class="row-ctl"><input type="range" id="set-dim" min="0" max="70" step="5" data-od-id="set-dim"></div>
+      </div>
+      <div class="row">
+        <div><div class="row-label">Drift protection</div><div class="row-help">Nudges the clock a few pixels every few minutes to protect the screen.</div></div>
+        <div class="row-ctl"><button class="switch" id="set-drift" type="button" role="switch" aria-checked="false" aria-label="Drift protection" data-od-id="set-drift"></button></div>
+      </div>
+    </div>
+
+    <div class="sect">
+      <h3>Alarms</h3>
+      <div id="alarmList"></div>
+      <button class="btn btn-quiet" id="addAlarmBtn" type="button" data-od-id="add-alarm">+ Add alarm</button>
+    </div>
+
+    <div class="sect">
+      <h3>Daily rhythm</h3>
+      <div class="row">
+        <div><div class="row-label">School-night bedtime</div><div class="row-help">Shows a bedtime countdown in the evening.</div></div>
+        <div class="row-ctl"><input type="time" id="set-bedtime" data-od-id="set-bedtime"></div>
+      </div>
+    </div>
+
+    <div class="sect">
+      <h3>Indian holidays</h3>
+      <div class="row-help" id="holidayHelp" style="margin-bottom:1.6vmin;"></div>
+      <div id="holidayList"></div>
+      <div class="holidayrow" style="border-bottom:none;">
+        <input class="hname" id="newHolidayName" type="text" placeholder="Festival name">
+        <input class="hdate" id="newHolidayDate" type="date">
+      </div>
+      <button class="btn btn-quiet" id="addHolidayBtn" type="button" data-od-id="add-holiday">+ Add holiday</button>
+    </div>
+
+    <div class="sect">
+      <h3>Parental lock</h3>
+      <div class="row">
+        <div><div class="row-label">Lock Settings with a PIN</div><div class="row-help">Stops little hands changing the clock. The clock, alarms and snooze keep working. Forgot the PIN? Clear this site's data in Safari &mdash; that also erases the clock's settings.</div></div>
+        <div class="row-ctl"><button class="switch" id="set-lock" type="button" role="switch" aria-checked="false" aria-label="Parental lock" data-od-id="set-lock"></button></div>
+      </div>
+      <div class="row" id="lockPinRow" hidden>
+        <div><div class="row-label">PIN</div><div class="row-help">Four digits. Change it any time.</div></div>
+        <div class="row-ctl"><button class="btn btn-quiet" id="changePinBtn" type="button" data-od-id="change-pin">Change PIN</button></div>
+      </div>
+      <div class="row">
+        <div><div class="row-label">Stay unlocked</div><div class="row-help">How long Settings stays open after a correct PIN before it locks again.</div></div>
+        <div class="row-ctl"><div class="seg" id="set-relock" data-od-id="set-relock"><button type="button" data-v="0">Off</button><button type="button" data-v="1">1 min</button><button type="button" data-v="5">5 min</button></div></div>
+      </div>
+    </div>
+
+    <div class="sect">
+      <h3>Reset</h3>
+      <button class="btn btn-danger" id="resetBtn" type="button" data-od-id="reset">Reset all settings</button>
+    </div>
+  </div>
+</div>
+
+<div class="lockscreen" id="lockScreen" role="dialog" aria-modal="true" aria-labelledby="lockTitle">
+  <div class="lock-badge" aria-hidden="true">
+    <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.7" stroke-linecap="round" stroke-linejoin="round"><rect x="4.5" y="10.5" width="15" height="9.5" rx="2.2"></rect><path d="M8 10.5V7.5a4 4 0 0 1 8 0v3"></path></svg>
+  </div>
+  <div class="lock-title" id="lockTitle">Enter PIN</div>
+  <div class="lock-sub" id="lockSub">Settings are locked.</div>
+  <div class="pindots" id="pindots" aria-hidden="true">
+    <span class="pindot"></span><span class="pindot"></span><span class="pindot"></span><span class="pindot"></span>
+  </div>
+  <div class="keypad" id="keypad">
+    <button class="key" type="button" data-key="1">1</button>
+    <button class="key" type="button" data-key="2">2</button>
+    <button class="key" type="button" data-key="3">3</button>
+    <button class="key" type="button" data-key="4">4</button>
+    <button class="key" type="button" data-key="5">5</button>
+    <button class="key" type="button" data-key="6">6</button>
+    <button class="key" type="button" data-key="7">7</button>
+    <button class="key" type="button" data-key="8">8</button>
+    <button class="key" type="button" data-key="9">9</button>
+    <button class="key is-blank" type="button" tabindex="-1" aria-hidden="true"></button>
+    <button class="key" type="button" data-key="0">0</button>
+    <button class="key is-soft" type="button" data-key="back" aria-label="Delete"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.9" stroke-linecap="round" stroke-linejoin="round"><path d="M20 6H9l-6 6 6 6h11a1 1 0 0 0 1-1V7a1 1 0 0 0-1-1z"></path><path d="M15 9.5 11 14M11 9.5 15 14"></path></svg></button>
+  </div>
+  <button class="btn btn-quiet lock-cancel" id="lockCancel" type="button">Cancel</button>
+</div>
+
+<script>
+(function () {
+  "use strict";
+
+  /* ── Seed data (source: python-holidays dataset, India, 2026-2027) ── */
+  var SEED = {
+    defaults: {
+      kidName: "", birthday: "", format12: true, showSeconds: true,
+      clockTheme: "midnight", nightDim: 45, driftProtect: true,
+      bedtime: "21:00", schoolWake: "07:00", weekendWake: "08:30",
+      lockEnabled: false, lockAutoMin: 0
+    },
+    fixedHolidays: [
+      { monthDay: "01-01", name: "New Year's Day" },
+      { monthDay: "01-26", name: "Republic Day" },
+      { monthDay: "04-14", name: "Ambedkar Jayanti" },
+      { monthDay: "08-15", name: "Independence Day" },
+      { monthDay: "09-05", name: "Teachers' Day" },
+      { monthDay: "10-02", name: "Gandhi Jayanti" },
+      { monthDay: "11-14", name: "Children's Day" },
+      { monthDay: "12-25", name: "Christmas" }
+    ],
+    datedHolidays: [
+      { date: "2026-01-14", name: "Pongal" },
+      { date: "2026-01-15", name: "Makara Sankranti" },
+      { date: "2026-03-04", name: "Holi" },
+      { date: "2026-03-21", name: "Id-ul-Fitr" },
+      { date: "2026-03-26", name: "Ram Navami" },
+      { date: "2026-03-31", name: "Mahavir Jayanti" },
+      { date: "2026-04-03", name: "Good Friday" },
+      { date: "2026-04-14", name: "Ambedkar Jayanti & Vaisakhi" },
+      { date: "2026-05-01", name: "Buddha Purnima" },
+      { date: "2026-05-27", name: "Id-ul-Zuha (Bakrid)" },
+      { date: "2026-06-26", name: "Muharram" },
+      { date: "2026-08-26", name: "Milad-un-Nabi & Onam" },
+      { date: "2026-08-28", name: "Raksha Bandhan" },
+      { date: "2026-09-04", name: "Janmashtami" },
+      { date: "2026-09-14", name: "Ganesh Chaturthi" },
+      { date: "2026-10-11", name: "Navratri begins" },
+      { date: "2026-10-20", name: "Dussehra" },
+      { date: "2026-11-08", name: "Diwali (Deepavali)" },
+      { date: "2026-11-24", name: "Guru Nanak's Jayanti" },
+      { date: "2027-01-15", name: "Pongal" },
+      { date: "2027-03-06", name: "Maha Shivaratri" },
+      { date: "2027-03-10", name: "Id-ul-Fitr" },
+      { date: "2027-03-22", name: "Holi" },
+      { date: "2027-03-26", name: "Good Friday" },
+      { date: "2027-04-14", name: "Ambedkar Jayanti & Vaisakhi" },
+      { date: "2027-04-15", name: "Ram Navami" },
+      { date: "2027-04-18", name: "Mahavir Jayanti" },
+      { date: "2027-05-17", name: "Id-ul-Zuha (Bakrid)" },
+      { date: "2027-05-20", name: "Buddha Purnima" },
+      { date: "2027-06-16", name: "Muharram" },
+      { date: "2027-08-15", name: "Independence Day & Milad-un-Nabi" },
+      { date: "2027-08-17", name: "Raksha Bandhan" },
+      { date: "2027-08-25", name: "Janmashtami" },
+      { date: "2027-09-04", name: "Ganesh Chaturthi" },
+      { date: "2027-09-12", name: "Onam" },
+      { date: "2027-09-30", name: "Navratri begins" },
+      { date: "2027-10-09", name: "Dussehra" },
+      { date: "2027-10-29", name: "Diwali (Deepavali)" },
+      { date: "2027-11-14", name: "Children's Day & Guru Nanak's Jayanti" }
+    ],
+    note: "National gazetted holidays plus common regional festivals, preloaded for 2026 and 2027. Some days carry two observances. Lunar, solar and Islamic dates can shift by a day by region \u2014 edit or add your own in Settings."
+  };
+
+  /* ── helpers ─────────────────────────────────────────────────────── */
+  function $(id) { return document.getElementById(id); }
+  function pad2(n) { return (n < 10 ? "0" : "") + n; }
+  var DAYS = ["Sunday","Monday","Tuesday","Wednesday","Thursday","Friday","Saturday"];
+  var MONTHS = ["January","February","March","April","May","June","July","August","September","October","November","December"];
+  var WD_SHORT = ["S","M","T","W","T","F","S"];
+  var WEEK_ORDER = [1,2,3,4,5,6,0];
+  function keyOf(d) { return d.getFullYear() + "-" + pad2(d.getMonth()+1) + "-" + pad2(d.getDate()); }
+  function parseYMD(s) { if (!s || s.length < 10) return null; var p = s.split("-"); return new Date(parseInt(p[0],10), parseInt(p[1],10)-1, parseInt(p[2],10)); }
+  function minutesOf(hhmm) { var p = (hhmm||"0:0").split(":"); return parseInt(p[0],10)*60 + parseInt(p[1],10); }
+
+  /* ── state ───────────────────────────────────────────────────────── */
+  var STORE_KEY = "roomclock.v1";
+
+  function defaultAlarms() {
+    var dd = SEED.defaults;
+    return [
+      { time: dd.schoolWake || "07:00",  label: "School",  days: [false,true,true,true,true,true,false], on: true  },
+      { time: dd.weekendWake || "08:30", label: "Weekend", days: [false,false,false,false,false,false,true], on: false }
+    ];
+  }
+  function defaultState() {
+    var dd = SEED.defaults;
+    return {
+      name: dd.kidName || "", birthday: dd.birthday || "",
+      format12: dd.format12 !== false, showSeconds: dd.showSeconds !== false,
+      clockTheme: dd.clockTheme || "midnight", nightDim: parseInt(dd.nightDim,10) || 0,
+      driftProtect: dd.driftProtect !== false, bedtime: dd.bedtime || "21:00",
+      lockEnabled: dd.lockEnabled === true, lockAutoMin: parseInt(dd.lockAutoMin,10) || 0,
+      alarms: defaultAlarms(), customHolidays: []
+    };
+  }
+  var state;
+  function normAlarms(list) {
+    var out = [], i, j, a, days, tp, hh, mm;
+    if (!list || !list.length) return defaultAlarms();
+    for (i=0;i<list.length;i++){
+      a = list[i];
+      if (!a || typeof a !== "object" || typeof a.time !== "string" || a.time.indexOf(":") < 0) continue;
+      tp = a.time.split(":");
+      hh = parseInt(tp[0],10); mm = parseInt(tp[1],10);
+      if (isNaN(hh) || isNaN(mm) || hh < 0 || hh > 23 || mm < 0 || mm > 59) continue;
+      days = [];
+      for (j=0;j<7;j++) days.push(!!(a.days && a.days[j]));
+      out.push({ time: pad2(hh) + ":" + pad2(mm), label: a.label == null ? "" : String(a.label), days: days, on: !!a.on });
+    }
+    return out.length ? out : defaultAlarms();
+  }
+  function normHolidays(list) {
+    var out = [], i, h;
+    if (!list || !list.length) return out;
+    for (i=0;i<list.length;i++){
+      h = list[i];
+      if (!h || typeof h !== "object" || typeof h.name !== "string" || typeof h.date !== "string" || h.date.length < 10) continue;
+      out.push({ name: h.name, date: h.date });
+    }
+    return out;
+  }
+  function loadState() {
+    var base = defaultState();
+    try {
+      var saved = window.localStorage.getItem(STORE_KEY);
+      if (saved) { var p = JSON.parse(saved); for (var k in p) { if (p.hasOwnProperty(k)) base[k] = p[k]; } }
+      if (saved && !base.clockTheme) {
+        var legacy = { auto: "midnight", light: "paper", night: "midnight" };
+        base.clockTheme = legacy[base.theme] || "midnight";
+      }
+      if (!THEMES[base.clockTheme]) base.clockTheme = "midnight";
+      base.alarms = normAlarms(base.alarms);
+      base.customHolidays = normHolidays(base.customHolidays);
+      base.nightDim = parseInt(base.nightDim,10); if (isNaN(base.nightDim)) base.nightDim = 0;
+      base.lockAutoMin = parseInt(base.lockAutoMin,10); if (isNaN(base.lockAutoMin)) base.lockAutoMin = 0;
+    } catch (e) {}
+    state = base;
+  }
+  function saveState() { try { window.localStorage.setItem(STORE_KEY, JSON.stringify(state)); } catch (e) {} }
+
+  /* ── holidays ────────────────────────────────────────────────────── */
+  function holidayMapForYear(year) {
+    var map = {}, i;
+    for (i=0;i<SEED.fixedHolidays.length;i++){ map[(year + "-" + SEED.fixedHolidays[i].monthDay)] = SEED.fixedHolidays[i].name; }
+    for (i=0;i<SEED.datedHolidays.length;i++){ if (SEED.datedHolidays[i].date.slice(0,4) === String(year)) map[SEED.datedHolidays[i].date] = SEED.datedHolidays[i].name; }
+    for (i=0;i<state.customHolidays.length;i++){ if (state.customHolidays[i].date.slice(0,4) === String(year)) map[state.customHolidays[i].date] = state.customHolidays[i].name; }
+    return map;
+  }
+  function holidayName(dateObj) { return holidayMapForYear(dateObj.getFullYear())[keyOf(dateObj)] || null; }
+  function nextHoliday(fromDate) {
+    var probe = new Date(fromDate.getFullYear(), fromDate.getMonth(), fromDate.getDate());
+    for (var i=0;i<400;i++){ var nm = holidayName(probe); if (nm) return { date: new Date(probe.getTime()), name: nm }; probe.setDate(probe.getDate()+1); }
+    return null;
+  }
+  function daysBetween(a, b) {
+    var t1 = new Date(a.getFullYear(), a.getMonth(), a.getDate()).getTime();
+    var t2 = new Date(b.getFullYear(), b.getMonth(), b.getDate()).getTime();
+    return Math.round((t2 - t1) / 86400000);
+  }
+  function upcomingBirthday(now) {
+    if (!state.birthday) return null;
+    var b = parseYMD(state.birthday);
+    if (!b) return null;
+    var today = new Date(now.getFullYear(), now.getMonth(), now.getDate());
+    var next = new Date(now.getFullYear(), b.getMonth(), b.getDate());
+    if (next.getTime() < today.getTime()) next = new Date(now.getFullYear()+1, b.getMonth(), b.getDate());
+    var d = daysBetween(now, next);
+    return { days: d, date: next, today: d === 0 };
+  }
+  function bedtimeClock(now) {
+    if (!state.bedtime) return null;
+    var nowMin = now.getHours()*60 + now.getMinutes();
+    return { diff: minutesOf(state.bedtime) - nowMin };
+  }
+  function humanMin(m) {
+    var h = Math.floor(m/60), mm = m % 60;
+    return h <= 0 ? (mm + " min") : (h + "h " + mm + "m");
+  }
+
+  /* ── theme ───────────────────────────────────────────────────────── */
+  var THEMES = {
+    paper:     { dark: false, face: "digital" },
+    midnight:  { dark: true,  face: "digital" },
+    splitflap: { dark: true,  face: "flip"    },
+    ivory:     { dark: false, face: "flip"    },
+    neon:      { dark: true,  face: "digital" },
+    blade:     { dark: true,  face: "digital" },
+    arcade:    { dark: true,  face: "digital" }
+  };
+  var THEME_IDS = ["paper","midnight","splitflap","ivory","neon","blade","arcade"];
+  function currentTheme() { return THEMES[state.clockTheme] || THEMES.midnight; }
+  function isNightNow() { var h = new Date().getHours(); return h >= 21 || h < 6; }
+  function applyTheme() {
+    var t = currentTheme(), i;
+    for (i=0;i<THEME_IDS.length;i++) document.body.classList.remove("th-" + THEME_IDS[i]);
+    document.body.classList.remove("face-digital","face-flip","is-dark");
+    document.body.classList.add("th-" + state.clockTheme, "face-" + t.face);
+    if (t.dark) document.body.classList.add("is-dark");
+    $("dimmer").style.opacity = isNightNow() ? String((state.nightDim || 0) / 100) : "0";
+  }
+
+  /* ── clock render ────────────────────────────────────────────────── */
+  var lastMinute = -1, lastDay = -1;
+  function renderClock(force) {
+    var now = new Date();
+    if (currentTheme().face === "flip") renderFlip(now, force);
+    else renderDigital(now);
+    if (force || lastDay !== now.getDay()) {
+      $("dow").textContent = DAYS[now.getDay()];
+      $("dateline").textContent = now.getDate() + " " + MONTHS[now.getMonth()] + " " + now.getFullYear();
+      renderWeekStrip(now.getDay());
+      lastDay = now.getDay();
+    }
+    if (force || lastMinute !== (now.getHours()*60 + now.getMinutes())) { renderGreeting(now); lastMinute = now.getHours()*60 + now.getMinutes(); }
+  }
+  function renderDigital(now) {
+    var h = now.getHours(), m = now.getMinutes(), s = now.getSeconds();
+    var hh = h, mer = h < 12 ? "AM" : "PM";
+    if (state.format12) { hh = h % 12; if (hh === 0) hh = 12; }
+    var timeStr = (state.format12 ? hh : pad2(h)) + ":" + pad2(m);
+    if ($("time").textContent !== timeStr) $("time").textContent = timeStr;
+    if (state.showSeconds) { $("seconds").style.display = "block"; $("seconds").textContent = pad2(s); }
+    else { $("seconds").style.display = "none"; }
+    $("meridiem").textContent = state.format12 ? mer : "";
+  }
+
+  /* ── flip face ───────────────────────────────────────────────────── */
+  var FLIP_SLOTS = null, flipPrev = "";
+  function ensureFlip() {
+    if (FLIP_SLOTS) return;
+    var row = $("fliprow"), slots = {};
+    function card(slot) {
+      var c = document.createElement("div");
+      c.className = "fcard"; c.setAttribute("data-slot", slot);
+      c.innerHTML = '<div class="fc-half fc-top"><span>0</span></div>' +
+                    '<div class="fc-half fc-bottom"><span>0</span></div>' +
+                    '<div class="fc-flap fc-flap-front"><span>0</span></div>' +
+                    '<div class="fc-flap fc-flap-back"><span>0</span></div>';
+      slots[slot] = c; return c;
+    }
+    var colon = document.createElement("div"); colon.className = "fcolon"; colon.textContent = ":";
+    row.appendChild(card("h0")); row.appendChild(card("h1"));
+    row.appendChild(colon);
+    row.appendChild(card("m0")); row.appendChild(card("m1"));
+    FLIP_SLOTS = slots;
+  }
+  function setFlipQuiet(slot, ch) {
+    var c = FLIP_SLOTS[slot];
+    c.querySelector(".fc-top span").textContent = ch;
+    c.querySelector(".fc-bottom span").textContent = ch;
+    c.querySelector(".fc-flap-front span").textContent = ch;
+    c.querySelector(".fc-flap-back span").textContent = ch;
+  }
+  function setFlipSlot(slot, ch) {
+    var c = FLIP_SLOTS[slot];
+    var top = c.querySelector(".fc-top span"), bot = c.querySelector(".fc-bottom span");
+    if (top.textContent === ch) return;
+    c.querySelector(".fc-flap-front span").textContent = top.textContent;
+    c.querySelector(".fc-flap-back span").textContent = ch;
+    top.textContent = ch; bot.textContent = ch;
+    c.classList.remove("is-flipping");
+    void c.offsetWidth;
+    c.classList.add("is-flipping");
+    window.setTimeout(function(){ c.classList.remove("is-flipping"); }, 520);
+  }
+  function renderFlip(now, force) {
+    ensureFlip();
+    var h = now.getHours(), m = now.getMinutes(), s = now.getSeconds();
+    var hh = h, mer = h < 12 ? "AM" : "PM";
+    if (state.format12) { hh = h % 12; if (hh === 0) hh = 12; }
+    var str = pad2(state.format12 ? hh : h) + ":" + pad2(m);
+    var quiet = force || flipPrev === "";
+    var d0 = str.charAt(0), d1 = str.charAt(1), d3 = str.charAt(3), d4 = str.charAt(4);
+    if (quiet) { setFlipQuiet("h0",d0); setFlipQuiet("h1",d1); setFlipQuiet("m0",d3); setFlipQuiet("m1",d4); }
+    else { setFlipSlot("h0",d0); setFlipSlot("h1",d1); setFlipSlot("m0",d3); setFlipSlot("m1",d4); }
+    flipPrev = str;
+    var meta = pad2(s) + "s" + (state.format12 ? " \u00b7 " + mer : "");
+    if ($("fmeta").textContent !== meta) $("fmeta").textContent = meta;
+  }
+  function renderWeekStrip(today) {
+    var html = "", i, d;
+    for (i=0;i<WEEK_ORDER.length;i++){ d = WEEK_ORDER[i]; html += '<span class="' + (d===today ? "is-today" : "") + '">' + WD_SHORT[d] + "</span>"; }
+    $("weekstrip").innerHTML = html;
+  }
+  function renderGreeting(now) {
+    var h = now.getHours(), g;
+    if (h < 5) g = "Sweet dreams";
+    else if (h < 12) g = "Good morning";
+    else if (h < 17) g = "Good afternoon";
+    else if (h < 21) g = "Good evening";
+    else g = "Time to wind down";
+    if (state.name) g += ", " + state.name;
+    $("greeting").textContent = g;
+  }
+
+  /* ── cards ───────────────────────────────────────────────────────── */
+  function renderCards() {
+    var now = new Date();
+    var a = nextAlarmAfter(now);
+    if (a) { $("alarmValue").textContent = formatClock12(a.time); $("alarmSub").textContent = (a.today ? "Today" : (a.label || "Upcoming")); }
+    else { $("alarmValue").textContent = "None set"; $("alarmSub").textContent = "Add one in Settings"; }
+
+    var tomorrow = new Date(now.getFullYear(), now.getMonth(), now.getDate()+1);
+    var wd = tomorrow.getDay(), hol = holidayName(tomorrow), weekend = (wd === 0 || wd === 6);
+    if (hol) { $("schoolValue").textContent = "No school"; $("schoolSub").textContent = hol; }
+    else if (weekend) { $("schoolValue").textContent = "Weekend"; $("schoolSub").textContent = "No school tomorrow"; }
+    else { $("schoolValue").textContent = "School day"; $("schoolSub").textContent = wakeFor(tomorrow); }
+
+    var todayHol = holidayName(now);
+    if (todayHol) { $("festivalValue").textContent = todayHol; $("cardFestival").hidden = false; }
+    else { $("cardFestival").hidden = true; }
+
+    var bd = upcomingBirthday(now);
+    if (bd && (bd.today || bd.days <= 30)) {
+      $("cardBirthday").hidden = false;
+      if (bd.today) {
+        $("birthdayValue").textContent = "Happy birthday";
+        $("birthdaySub").textContent = state.name ? (state.name + "!") : "Have a wonderful day";
+      } else {
+        $("birthdayValue").textContent = "In " + bd.days + (bd.days === 1 ? " day" : " days");
+        $("birthdaySub").textContent = bd.date.getDate() + " " + MONTHS[bd.date.getMonth()];
+      }
+    } else { $("cardBirthday").hidden = true; }
+
+    var bt = bedtimeClock(now);
+    if (bt && bt.diff > 0 && bt.diff <= 180) {
+      $("cardBedtime").hidden = false;
+      $("bedtimeValue").textContent = "In " + humanMin(bt.diff);
+      $("bedtimeSub").textContent = "Lights out " + formatClock12(state.bedtime);
+    } else if (bt && bt.diff <= 0 && bt.diff > -120) {
+      $("cardBedtime").hidden = false;
+      $("bedtimeValue").textContent = "Past bedtime";
+      $("bedtimeSub").textContent = "Time to wind down";
+    } else { $("cardBedtime").hidden = true; }
+  }
+  function wakeFor(dateObj) {
+    var w = findAlarmFor(dateObj);
+    if (w) return "Wake " + formatClock12(w.time);
+    var nh = nextHoliday(dateObj);
+    if (nh) { var d = daysBetween(dateObj, nh.date); return "Next holiday " + (d<=0 ? "today" : "in " + d + "d"); }
+    return "";
+  }
+  function findAlarmFor(dateObj) {
+    var best = null, i;
+    for (i=0;i<state.alarms.length;i++){ var al = state.alarms[i]; if (!al.on || !al.days[dateObj.getDay()]) continue; if (!best || minutesOf(al.time) < minutesOf(best.time)) best = al; }
+    return best;
+  }
+  function nextAlarmAfter(now) {
+    var nowMin = now.getHours()*60 + now.getMinutes(), best = null, i, dd, al;
+    for (i=0;i<state.alarms.length;i++){
+      al = state.alarms[i]; if (!al.on) continue;
+      for (dd=0; dd<8; dd++){
+        var probe = new Date(now.getFullYear(), now.getMonth(), now.getDate()+dd);
+        if (!al.days[probe.getDay()]) continue;
+        if (dd === 0 && minutesOf(al.time) <= nowMin) continue;
+        var delta = dd*1440 + minutesOf(al.time) - nowMin;
+        if (!best || delta < best.delta) best = { delta: delta, time: al.time, label: al.label, today: dd===0 };
+        break;
+      }
+    }
+    return best;
+  }
+  function formatClock12(hhmm) {
+    var p = hhmm.split(":"), h = parseInt(p[0],10), m = p[1];
+    if (!state.format12) return pad2(h) + ":" + m;
+    var mer = h < 12 ? "AM" : "PM", hh = h % 12; if (hh===0) hh=12;
+    return hh + ":" + m + " " + mer;
+  }
+
+  /* ── alarms engine ───────────────────────────────────────────────── */
+  var audioCtx = null, ringTimer = null, ringing = null, firedKeys = {};
+  var snoozeUntil = 0, snoozeLabel = "";
+  function initAudio() {
+    try { var Ctx = window.AudioContext || window.webkitAudioContext; if (Ctx && !audioCtx) audioCtx = new Ctx();
+      if (audioCtx && audioCtx.state === "suspended" && audioCtx.resume) audioCtx.resume(); } catch (e) {}
+  }
+  function playTone(freq, when, dur, vol) {
+    if (!audioCtx) return;
+    var o = audioCtx.createOscillator(), g = audioCtx.createGain();
+    o.type = "sine"; o.frequency.value = freq;
+    g.gain.setValueAtTime(0.0001, when);
+    g.gain.exponentialRampToValueAtTime(vol || 0.5, when + 0.02);
+    g.gain.exponentialRampToValueAtTime(0.0001, when + dur);
+    o.connect(g); g.connect(audioCtx.destination); o.start(when); o.stop(when + dur + 0.05);
+  }
+  function playChime() {
+    if (!audioCtx) return;
+    var t = audioCtx.currentTime + 0.02, notes = [523.25, 659.25, 783.99, 1046.50];
+    for (var i=0;i<notes.length;i++) playTone(notes[i], t + i*0.20, 1.3, 0.45);
+  }
+  function checkAlarms() {
+    if (ringing) return;
+    var now = new Date();
+    if (snoozeUntil && Date.now() >= snoozeUntil) {
+      var sl = snoozeLabel || "Alarm";
+      snoozeUntil = 0; snoozeLabel = "";
+      fireAlarm({ time: pad2(now.getHours()) + ":" + pad2(now.getMinutes()), label: sl + " (snooze)" });
+      return;
+    }
+    var hhmm = pad2(now.getHours()) + ":" + pad2(now.getMinutes());
+    var dayKey = keyOf(now) + " " + hhmm;
+    var due = null;
+    for (var i=0;i<state.alarms.length;i++){
+      var al = state.alarms[i];
+      if (!al.on || al.time !== hhmm || !al.days[now.getDay()]) continue;
+      var fk = "a" + i + " " + dayKey;
+      if (firedKeys[fk]) continue;
+      firedKeys[fk] = true;
+      if (!due) due = { time: al.time, label: al.label };
+    }
+    if (due) fireAlarm(due);
+  }
+  var alarmLastFocus = null;
+  function fireAlarm(al) {
+    ringing = al;
+    if (!$("alarmOverlay").classList.contains("is-open")) alarmLastFocus = document.activeElement;
+    $("alarmTime").textContent = formatClock12(al.time);
+    $("alarmLabel").textContent = al.label || "Alarm";
+    $("alarmOverlay").classList.add("is-open");
+    $("dimmer").style.opacity = "0";
+    initAudio(); playChime();
+    if (ringTimer) clearInterval(ringTimer);
+    ringTimer = setInterval(playChime, 3000);
+    var d = $("dismissBtn"); if (d && d.focus) { try { d.focus(); } catch (e) {} }
+  }
+  function stopAlarm() {
+    if (ringTimer) { clearInterval(ringTimer); ringTimer = null; }
+    $("alarmOverlay").classList.remove("is-open");
+    ringing = null; applyTheme();
+    if (alarmLastFocus && alarmLastFocus.focus) { try { alarmLastFocus.focus(); } catch (e) {} }
+    alarmLastFocus = null;
+  }
+  function snoozeAlarm() {
+    var al = ringing || { label: "Alarm" };
+    snoozeUntil = Date.now() + 5*60*1000;
+    snoozeLabel = al.label || "Alarm";
+    stopAlarm();
+  }
+
+  /* ── drift protection ────────────────────────────────────────────── */
+  var driftTimer = null;
+  function startDrift() {
+    if (driftTimer) clearInterval(driftTimer);
+    if (!state.driftProtect) { $("driftTarget").style.transform = "none"; return; }
+    driftTimer = setInterval(function () {
+      var dx = Math.round((Math.random()*2-1)*6), dy = Math.round((Math.random()*2-1)*6);
+      $("driftTarget").style.transform = "translate(" + dx + "px," + dy + "px)";
+    }, 4*60*1000);
+  }
+
+  /* ── wake lock (best effort) ─────────────────────────────────────── */
+  function requestWakeLock() {
+    try { if (navigator.wakeLock && navigator.wakeLock.request) navigator.wakeLock.request("screen").catch(function(){}); } catch (e) {}
+  }
+  document.addEventListener("visibilitychange", function () { if (!document.hidden) { requestWakeLock(); renderClock(true); renderCards(); } });
+
+  /* ── settings UI ─────────────────────────────────────────────────── */
+  var DAY_LABELS = ["S","M","T","W","T","F","S"];
+  var FOCUSABLE = 'a[href], button:not([disabled]), input:not([disabled]), select:not([disabled]), textarea:not([disabled]), [tabindex]:not([tabindex="-1"])';
+  function setSwitch(btn, on) {
+    if (!btn) return;
+    btn.classList.toggle("is-on", !!on);
+    btn.setAttribute("aria-checked", on ? "true" : "false");
+  }
+  function activeOverlay() {
+    if ($("settingsSheet").classList.contains("is-open")) return $("settingsSheet");
+    if ($("alarmOverlay").classList.contains("is-open")) return $("alarmOverlay");
+    if ($("lockScreen").classList.contains("is-open")) return $("lockScreen");
+    return null;
+  }
+  function trapTab(e) {
+    var root = activeOverlay(); if (!root) return;
+    var list = root.querySelectorAll(FOCUSABLE), vis = [], i;
+    for (i=0;i<list.length;i++) if (list[i].offsetParent !== null) vis.push(list[i]);
+    if (!vis.length) return;
+    var first = vis[0], last = vis[vis.length-1], active = document.activeElement;
+    if (e.shiftKey && (active === first || !root.contains(active))) { e.preventDefault(); last.focus(); }
+    else if (!e.shiftKey && (active === last || !root.contains(active))) { e.preventDefault(); first.focus(); }
+  }
+  function renderAlarmList() {
+    var wrap = $("alarmList"), html = "", i, d, di;
+    for (i=0;i<state.alarms.length;i++){
+      var al = state.alarms[i];
+      html += '<div class="alarmrow" data-i="' + i + '">';
+      html += '<div class="alarmrow-top"><div><div class="alarmrow-time">' + formatClock12(al.time) + '</div><div class="alarmrow-label">' + (al.label || "Alarm") + '</div></div>';
+      html += '<div class="alarm-head-right"><input type="time" class="alarm-time-input" value="' + al.time + '" aria-label="Alarm time">';
+      html += '<button class="switch ' + (al.on ? "is-on" : "") + ' alarm-toggle" type="button" role="switch" aria-checked="' + (al.on ? "true" : "false") + '" aria-label="Enable alarm" style="margin-left:1.2vmin;"></button>';
+      html += '<button class="btn btn-danger alarm-del" type="button" style="margin-left:1.2vmin;">Delete</button></div></div>';
+      html += '<div class="daysrow">';
+      for (d=1; d<=7; d++){ di = d % 7; html += '<button class="daybtn ' + (al.days[di] ? "is-on" : "") + '" data-d="' + di + '" type="button" aria-pressed="' + (al.days[di] ? "true" : "false") + '" aria-label="' + DAYS[di] + '">' + DAY_LABELS[di] + '</button>'; }
+      html += '</div><div style="margin-top:1.2vmin;"><input type="text" class="alarm-label-input" value="' + (al.label||"") + '" placeholder="Label" style="width:100%;"></div></div>';
+    }
+    wrap.innerHTML = html;
+    var rows = wrap.querySelectorAll(".alarmrow");
+    for (i=0;i<rows.length;i++) bindAlarmRow(rows[i]);
+  }
+  function bindAlarmRow(row) {
+    var i = parseInt(row.getAttribute("data-i"),10);
+    var timeIn = row.querySelector(".alarm-time-input");
+    timeIn.addEventListener("change", function(){ state.alarms[i].time = timeIn.value; saveState(); renderAlarmList(); renderCards(); });
+    row.querySelector(".alarm-toggle").addEventListener("click", function(){ state.alarms[i].on = !state.alarms[i].on; saveState(); renderAlarmList(); renderCards(); });
+    row.querySelector(".alarm-del").addEventListener("click", function(){ state.alarms.splice(i,1); saveState(); renderAlarmList(); renderCards(); });
+    var labIn = row.querySelector(".alarm-label-input");
+    labIn.addEventListener("change", function(){ state.alarms[i].label = labIn.value; saveState(); renderCards(); });
+    var dayBtns = row.querySelectorAll(".daybtn");
+    for (var k=0;k<dayBtns.length;k++){ (function(btn){ btn.addEventListener("click", function(){ var d = parseInt(btn.getAttribute("data-d"),10); state.alarms[i].days[d] = !state.alarms[i].days[d]; saveState(); renderAlarmList(); renderCards(); }); })(dayBtns[k]); }
+  }
+  function renderHolidayList() {
+    var wrap = $("holidayList"), html = "", i;
+    for (i=0;i<state.customHolidays.length;i++){
+      html += '<div class="holidayrow" data-i="' + i + '"><input class="hname" value="' + state.customHolidays[i].name.replace(/"/g,"&quot;") + '">';
+      html += '<input class="hdate" type="date" value="' + state.customHolidays[i].date + '">';
+      html += '<button class="btn btn-danger hdel" type="button" style="margin-left:1vmin;">Del</button></div>';
+    }
+    wrap.innerHTML = html;
+    var rows = wrap.querySelectorAll(".holidayrow");
+    for (i=0;i<rows.length;i++){ (function(row){
+      var idx = parseInt(row.getAttribute("data-i"),10);
+      row.querySelector(".hname").addEventListener("change", function(e){ state.customHolidays[idx].name = e.target.value; saveState(); renderCards(); });
+      row.querySelector(".hdate").addEventListener("change", function(e){ state.customHolidays[idx].date = e.target.value; saveState(); renderCards(); });
+      row.querySelector(".hdel").addEventListener("click", function(){ state.customHolidays.splice(idx,1); saveState(); renderHolidayList(); renderCards(); });
+    })(rows[i]); }
+  }
+  function segSet(containerId, current) {
+    var btns = $(containerId).querySelectorAll("button");
+    for (var i=0;i<btns.length;i++){
+      var on = btns[i].getAttribute("data-v") === current;
+      btns[i].classList.toggle("is-on", on);
+      btns[i].setAttribute("aria-pressed", on ? "true" : "false");
+    }
+  }
+  function segBind(containerId, onChange) {
+    var box = $(containerId), btns = box.querySelectorAll("button");
+    for (var i=0;i<btns.length;i++){ (function(b){
+      b.addEventListener("click", function(){
+        var v = b.getAttribute("data-v");
+        var all = $(containerId).querySelectorAll("button");
+        for (var j=0;j<all.length;j++){ all[j].classList.remove("is-on"); all[j].setAttribute("aria-pressed","false"); }
+        b.classList.add("is-on"); b.setAttribute("aria-pressed","true");
+        if (onChange) onChange(v);
+      });
+    })(btns[i]); }
+  }
+  function renderThemeGallery() {
+    var cards = document.querySelectorAll("#themeGrid .tcard");
+    for (var i=0;i<cards.length;i++) cards[i].classList.toggle("is-on", cards[i].getAttribute("data-theme") === state.clockTheme);
+  }
+  function bindThemeGallery() {
+    var cards = document.querySelectorAll("#themeGrid .tcard");
+    for (var i=0;i<cards.length;i++){ (function(btn){
+      btn.addEventListener("click", function(){
+        state.clockTheme = btn.getAttribute("data-theme");
+        saveState(); applyTheme(); renderClock(true); renderThemeGallery();
+      });
+    })(cards[i]); }
+  }
+  function bindSettings() {
+    var nameIn = $("set-name");
+    nameIn.addEventListener("change", function(){ state.name = nameIn.value; saveState(); renderGreeting(new Date()); });
+    var bIn = $("set-birthday");
+    bIn.addEventListener("change", function(){ state.birthday = bIn.value; saveState(); });
+    segBind("set-format", function(v){ state.format12 = (v==="12"); saveState(); renderClock(true); renderCards(); });
+    $("set-seconds").addEventListener("click", function(){ state.showSeconds = !state.showSeconds; setSwitch(this, state.showSeconds); saveState(); renderClock(true); });
+    $("set-drift").addEventListener("click", function(){ state.driftProtect = !state.driftProtect; setSwitch(this, state.driftProtect); saveState(); startDrift(); });
+    var dim = $("set-dim");
+    dim.addEventListener("input", function(){ state.nightDim = parseInt(dim.value,10)||0; saveState(); applyTheme(); });
+    var bt = $("set-bedtime");
+    bt.addEventListener("change", function(){ state.bedtime = bt.value; saveState(); });
+    segBind("set-relock", function(v){ state.lockAutoMin = parseInt(v,10) || 0; saveState(); });
+    bindThemeGallery();
+    $("holidayHelp").textContent = SEED.note;
+    syncLockUI();
+  }
+  function populateSettings() {
+    $("set-name").value = state.name;
+    $("set-birthday").value = state.birthday;
+    segSet("set-format", state.format12 ? "12" : "24");
+    renderThemeGallery();
+    setSwitch($("set-seconds"), state.showSeconds);
+    setSwitch($("set-drift"), state.driftProtect);
+    $("set-dim").value = state.nightDim;
+    $("set-bedtime").value = state.bedtime;
+    syncLockUI();
+  }
+  var sheetLastFocus = null;
+  function openSettings() {
+    populateSettings(); renderAlarmList(); renderHolidayList();
+    sheetLastFocus = document.activeElement;
+    $("settingsSheet").classList.add("is-open");
+    var d = $("doneBtn"); if (d && d.focus) { try { d.focus(); } catch (e) {} }
+  }
+  function closeSettings() {
+    saveState(); $("settingsSheet").classList.remove("is-open"); applyTheme(); renderClock(true); renderCards();
+    if (sheetLastFocus && sheetLastFocus.focus) { try { sheetLastFocus.focus(); } catch (e) {} }
+    sheetLastFocus = null;
+  }
+
+  /* ── parental lock ───────────────────────────────────────────────
+   * A 4-digit PIN in front of Settings. The hash is a salted, iterated
+   * string digest kept in its own localStorage key — a deterrent for
+   * small children, not real cryptography. Anyone with the device and
+   * developer tools can bypass it; Guided Access is the hard lock.
+   * Recovery: clearing the site's website data removes both the PIN and
+   * the clock's settings. */
+  var PIN_KEY = STORE_KEY + ".pin";
+  var pinMode = "verify", pinEntry = "", pinFirst = "", unlockedUntil = 0, lockLastFocus = null;
+
+  function readPin() { try { var raw = window.localStorage.getItem(PIN_KEY); return raw ? JSON.parse(raw) : null; } catch (e) { return null; } }
+  function writePin(o) { try { window.localStorage.setItem(PIN_KEY, JSON.stringify(o)); } catch (e) {} }
+  function hashPin(salt, pin) {
+    var s = String(salt) + "|" + String(pin) + "|roomclock";
+    var h1 = 0x811c9dc5, h2 = 0x1000193, i, c;
+    for (var round = 0; round < 5000; round++) {
+      for (i = 0; i < s.length; i++) {
+        c = s.charCodeAt(i) ^ (round & 0xff);
+        h1 = (h1 ^ c) >>> 0; h1 = Math.imul(h1, 0x01000193) >>> 0;
+        h2 = (h2 + c) >>> 0; h2 = Math.imul(h2 ^ (h2 >>> 13), 0x85ebca6b) >>> 0;
+      }
+    }
+    return (h1 >>> 0).toString(16) + (h2 >>> 0).toString(16);
+  }
+  function makeSalt() { return Math.random().toString(36).slice(2) + Math.random().toString(36).slice(2); }
+  function hasPin() { var p = readPin(); return !!(p && p.hash && p.salt); }
+  function storeNewPin(pin) { var salt = makeSalt(); writePin({ salt: salt, hash: hashPin(salt, pin) }); }
+  function verifyStoredPin(pin) { var p = readPin(); return !!(p && p.hash && hashPin(p.salt, pin) === p.hash); }
+  function lockActive() { return !!state.lockEnabled && hasPin(); }
+  function isUnlocked() { return !!state.lockEnabled && Date.now() < unlockedUntil; }
+  function markUnlocked() { unlockedUntil = state.lockAutoMin > 0 ? Date.now() + state.lockAutoMin * 60000 : Date.now() + 24 * 3600 * 1000; }
+
+  function syncLockUI() {
+    var locked = lockActive();
+    document.body.classList.toggle("is-locked", locked);
+    var sw = $("set-lock"); if (sw) setSwitch(sw, !!state.lockEnabled);
+    var row = $("lockPinRow"); if (row) row.hidden = !state.lockEnabled;
+    segSet("set-relock", String(state.lockAutoMin));
+  }
+
+  function setLockTitle(title, sub, isError) {
+    $("lockTitle").textContent = title;
+    var s = $("lockSub"); s.textContent = sub; s.classList.toggle("is-error", !!isError);
+  }
+  function renderDots() {
+    var dots = $("pindots").children, i;
+    for (i = 0; i < dots.length; i++) dots[i].classList.toggle("is-filled", i < pinEntry.length);
+  }
+  function openLock(mode) {
+    pinMode = mode || "verify"; pinEntry = ""; pinFirst = "";
+    lockLastFocus = document.activeElement;
+    if (pinMode === "verify") setLockTitle("Enter PIN", "Settings are locked.", false);
+    else if (pinMode === "setup-new") setLockTitle("Choose a PIN", "Pick four digits for the Settings lock.", false);
+    else if (pinMode === "setup-confirm") setLockTitle("Confirm PIN", "Type the same four digits again.", false);
+    renderDots(); $("lockScreen").classList.add("is-open");
+  }
+  function closeLock() {
+    $("lockScreen").classList.remove("is-open");
+    pinEntry = ""; pinFirst = ""; renderDots();
+    $("lockSub").classList.remove("is-error");
+    if (lockLastFocus && lockLastFocus.focus) { try { lockLastFocus.focus(); } catch (e) {} }
+  }
+  function rejectPin(msg) {
+    var dots = $("pindots");
+    setLockTitle(pinMode === "verify" ? "Enter PIN" : "Try again", msg, true);
+    dots.classList.remove("is-error");
+    void dots.offsetWidth;
+    dots.classList.add("is-error");
+    pinEntry = ""; renderDots();
+    window.setTimeout(function(){ dots.classList.remove("is-error"); }, 520);
+  }
+  function cancelLockFlow() {
+    if (pinMode === "setup-new" || pinMode === "setup-confirm") {
+      state.lockEnabled = false; saveState(); syncLockUI();
+    }
+    closeLock();
+  }
+  function submitPin() {
+    var pin = pinEntry;
+    if (pinMode === "verify") {
+      if (verifyStoredPin(pin)) { markUnlocked(); syncLockUI(); closeLock(); openSettings(); }
+      else rejectPin("That PIN did not match. Try again.");
+      return;
+    }
+    if (pinMode === "setup-new") {
+      pinFirst = pin; pinEntry = ""; pinMode = "setup-confirm";
+      setLockTitle("Confirm PIN", "Type the same four digits again.", false); renderDots();
+      return;
+    }
+    if (pinMode === "setup-confirm") {
+      if (pin === pinFirst) { storeNewPin(pin); state.lockEnabled = true; saveState(); syncLockUI(); markUnlocked(); closeLock(); }
+      else { pinMode = "setup-new"; pinFirst = ""; pinEntry = ""; renderDots(); rejectPin("Those did not match. Start again."); }
+      return;
+    }
+  }
+  function padDigit(d) {
+    if (pinEntry.length >= 4) return;
+    pinEntry += d; renderDots();
+    if (pinEntry.length === 4) { window.setTimeout(function(){ submitPin(); }, 120); }
+  }
+  function padBack() { pinEntry = pinEntry.slice(0, -1); renderDots(); }
+  function onLockKey(e) {
+    if (!$("lockScreen").classList.contains("is-open")) return;
+    if (e.key >= "0" && e.key <= "9") { padDigit(e.key); e.preventDefault(); }
+    else if (e.key === "Backspace") { padBack(); e.preventDefault(); }
+    else if (e.key === "Escape") { cancelLockFlow(); e.preventDefault(); }
+  }
+  function bindLock() {
+    $("keypad").addEventListener("click", function (e) {
+      var b = e.target.closest ? e.target.closest("[data-key]") : null;
+      if (!b) return;
+      var k = b.getAttribute("data-key");
+      if (k === "back") padBack(); else padDigit(k);
+    });
+    $("lockCancel").addEventListener("click", cancelLockFlow);
+    $("set-lock").addEventListener("click", function () {
+      if (state.lockEnabled) { state.lockEnabled = false; unlockedUntil = 0; saveState(); syncLockUI(); return; }
+      if (hasPin()) { state.lockEnabled = true; saveState(); syncLockUI(); }
+      else { openLock("setup-new"); }
+    });
+    $("changePinBtn").addEventListener("click", function () { openLock("setup-new"); });
+    document.addEventListener("keydown", onLockKey);
+    document.addEventListener("visibilitychange", function () {
+      if (document.hidden && state.lockEnabled && state.lockAutoMin > 0) unlockedUntil = 0;
+    });
+  }
+  function requestSettings() {
+    if (lockActive() && !isUnlocked()) openLock("verify");
+    else openSettings();
+  }
+
+  /* ── boot ────────────────────────────────────────────────────────── */
+  function begin() {
+    $("bootOverlay").classList.add("is-hidden");
+    document.body.classList.remove("is-booting");
+    initAudio(); requestWakeLock(); applyTheme(); renderClock(true); renderCards(); startDrift();
+  }
+  function init() {
+    loadState(); applyTheme(); renderClock(true); renderCards(); bindSettings(); bindLock();
+    document.addEventListener("keydown", function(e){ if (e.key === "Tab") trapTab(e); });
+    $("bootOverlay").addEventListener("click", begin);
+    $("settingsBtn").addEventListener("click", requestSettings);
+    $("doneBtn").addEventListener("click", closeSettings);
+    $("snoozeBtn").addEventListener("click", snoozeAlarm);
+    $("dismissBtn").addEventListener("click", stopAlarm);
+    $("addAlarmBtn").addEventListener("click", function(){ state.alarms.push({ time: "07:00", label: "New alarm", days: [false,true,true,true,true,true,false], on: true }); saveState(); renderAlarmList(); renderCards(); });
+    $("addHolidayBtn").addEventListener("click", function(){
+      var n = $("newHolidayName").value, d = $("newHolidayDate").value;
+      if (!n || !d) return;
+      state.customHolidays.push({ name: n, date: d });
+      $("newHolidayName").value = ""; $("newHolidayDate").value = "";
+      saveState(); renderHolidayList(); renderCards();
+    });
+    $("resetBtn").addEventListener("click", function(){
+      try { window.localStorage.removeItem(STORE_KEY); window.localStorage.removeItem(PIN_KEY); } catch (e) {}
+      unlockedUntil = 0;
+      loadState(); populateSettings(); renderAlarmList(); renderHolidayList(); applyTheme(); renderClock(true); renderCards();
+    });
+    setInterval(function(){ renderClock(false); }, 1000);
+    setInterval(function(){ checkAlarms(); }, 1000);
+    setInterval(function(){ applyTheme(); renderCards(); }, 60*1000);
+  }
+  if (document.readyState === "loading") document.addEventListener("DOMContentLoaded", init);
+  else init();
+})();
+</script>
+</body>
+</html>
