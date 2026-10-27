@@ -10,665 +10,602 @@
 <meta name="apple-mobile-web-app-status-bar-style" content="black-translucent">
 <meta name="mobile-web-app-capable" content="yes">
 <meta name="format-detection" content="telephone=no">
-<meta name="theme-color" content="#000000">
+<meta name="theme-color" content="#0b1030">
+<meta name="apple-mobile-web-app-title" content="Room Clock">
+<link rel="apple-touch-icon" href="icon-180.png">
+<link rel="apple-touch-startup-image" href="splash-1536x2048.png" media="(device-width: 768px) and (device-height: 1024px) and (-webkit-device-pixel-ratio: 2) and (orientation: portrait)">
+<link rel="apple-touch-startup-image" href="splash-2048x1536.png" media="(device-width: 768px) and (device-height: 1024px) and (-webkit-device-pixel-ratio: 2) and (orientation: landscape)">
 <title>Room Clock</title>
+<script>if (window.navigator.standalone) document.documentElement.className += " standalone";</script>
 <style>
 /* ─────────────────────────────────────────────────────────────────────────
- * Apple design system — tokens.css :root block, pasted verbatim (contract).
- * The dark (night) skin below only remaps a subset of these same token
- * names to Apple's dark-surface palette; no new token names are introduced.
+ * Room Clock — visual system
+ *
+ * The clock sits on a living "scene" (sky, hills, ocean, space, aurora or
+ * calm). Every scene follows the real sun: JS works out how far through
+ * night → dawn → day → golden hour → dusk we are and sets --c0…--c4 (the
+ * scene's colours) plus --dk (how dark it is, 0–1) on #scene once a minute.
+ * Motion uses only transform and opacity so an old iPad can keep up, and
+ * all of it stops at night, when the night face replaces the scene.
+ * Written for iOS 12 Safari and newer.
  * ─────────────────────────────────────────────────────────────────── */
+@font-face { font-family: "Nunito"; font-style: normal; font-weight: 700; font-display: swap; src: url("fonts/nunito-700.woff2") format("woff2"); }
+@font-face { font-family: "Nunito"; font-style: normal; font-weight: 800; font-display: swap; src: url("fonts/nunito-800.woff2") format("woff2"); }
+@font-face { font-family: "Nunito"; font-style: normal; font-weight: 900; font-display: swap; src: url("fonts/nunito-900.woff2") format("woff2"); }
+
 :root {
-  --bg: #ffffff;
-  --surface: #f5f5f7;
-  --surface-warm: #fbfbfd;
-  --fg: #1d1d1f;
-  --fg-2: #424245;
-  --muted: #6e6e73;
-  --meta: #86868b;
-  --border: #d2d2d7;
-  --border-soft: #e8e8ed;
-  --accent: #0071e3;
-  --accent-on: #ffffff;
-  --accent-hover: #0077ed;
-  --accent-active: #0066cc;
-  --success: #16a34a;
-  --warn:    #eab308;
-  --danger:  #dc2626;
-  --font-display:
-    "SF Pro Display", "SF Pro Icons", "Helvetica Neue", Helvetica, Arial, sans-serif;
-  --font-body:
-    "SF Pro Text", "SF Pro Icons", "Helvetica Neue", Helvetica, Arial, sans-serif;
-  --font-mono:
-    "SF Mono", ui-monospace, "JetBrains Mono", Menlo, Monaco, Consolas, monospace;
-  --text-xs:   12px;
-  --text-sm:   14px;
-  --text-base: 17px;
-  --text-lg:   21px;
-  --text-xl:   28px;
-  --text-2xl:  40px;
-  --text-3xl:  56px;
-  --text-4xl:  80px;
-  --leading-body:  1.47;
-  --leading-tight: 1.05;
-  --tracking-display: -0.015em;
-  --space-1:  4px;
-  --space-2:  8px;
-  --space-3:  12px;
-  --space-4:  16px;
-  --space-5:  20px;
-  --space-6:  24px;
-  --space-8:  32px;
-  --space-12: 48px;
-  --section-y-desktop: 100px;
-  --section-y-tablet:  64px;
-  --section-y-phone:   40px;
-  --radius-sm:   8px;
-  --radius-md:   12px;
-  --radius-lg:   18px;
-  --radius-pill: 980px;
-  --elev-flat:   none;
-  --elev-ring:   0 0 0 1px var(--border);
-  --elev-raised: 0 12px 32px rgba(0, 0, 0, 0.08);
-  --focus-ring: 0 0 0 4px rgba(0, 113, 227, 0.35);
-  --motion-fast:   150ms;
-  --motion-base:   220ms;
-  --ease-standard: cubic-bezier(0.28, 0, 0.22, 1);
-  --container-max:            1024px;
-  --container-gutter-desktop: 22px;
-  --container-gutter-tablet:  18px;
-  --container-gutter-phone:   16px;
-
-  /* Dark-surface (night) palette values consumed by the night skin. */
-  --night-bg:      #000000;
-  --night-surface: #1d1d1f;
-  --night-fg:      #f5f5f7;
-  --night-muted:   #86868b;
-  --night-border:  #2a2a2c;
-  --night-accent:  #2997ff;
-
-  /* Fixed ink / overlay colors (canvas, on-dark, on-light, dawn gradient). */
-  --ink-0:        #000000;
-  --ink-on-dark:  #ffffff;
-  --ink-on-light: #1d1d1f;
-  --dawn-1:       #f2a65a;
-  --dawn-2:       #7c4a1e;
-  --dawn-3:       #1d1006;
-
-  /* Flip-face depth: a top hinge highlight and a bottom seam shadow. */
-  --edge-hi: rgba(255,255,255,0.10);
-  --edge-lo: rgba(0,0,0,0.30);
-
-  /* On-dark controls (alarm overlay) and control shadows. Hoisted here so
-   * no raw rgba is written outside :root (design-system contract). */
-  --on-dark-wash: rgba(255,255,255,0.14);
-  --on-dark-line: rgba(255,255,255,0.45);
-  --on-dark-ring: rgba(255,255,255,0.5);
-  --shadow-knob:  0 1px 3px rgba(0,0,0,0.25);
-  --shadow-thumb: 0 1px 4px rgba(0,0,0,0.3);
-
-  /* ── Clock theme palettes ────────────────────────────────────────────
-   * Six curated presets. Values live inside :root so the contract
-   * "no raw hex outside :root" holds; the .th-* classes below bind each
-   * set into the standard token names (--bg, --surface, --fg, --accent…).
-   * Each preset is a whole look: palette, clock face and ambient field. */
-  /* Paper — minimal, light */
-  --th-paper-bg:#ffffff;        --th-paper-surface:#f5f5f7;    --th-paper-fg:#1d1d1f;
-  --th-paper-muted:#6e6e73;     --th-paper-border:#d2d2d7;     --th-paper-accent:#0071e3;
-  --th-paper-accent-on:#ffffff; --th-paper-accent-lift:#0077ed;
-  /* Midnight — sophisticated, dark, thin */
-  --th-midnight-bg:#000000;     --th-midnight-surface:#121214; --th-midnight-fg:#f5f5f7;
-  --th-midnight-muted:#7d7d82;  --th-midnight-border:#26262a;  --th-midnight-accent:#2f9bff;
-  --th-midnight-accent-on:#000000; --th-midnight-accent-lift:#4fabff; --th-midnight-2:#2f9bff;
-  /* Split-flap — flip clock, warm cream tiles on a dark board */
-  --th-splitflap-bg:#17130d;    --th-splitflap-surface:#241d13; --th-splitflap-fg:#f6ecd7;
-  --th-splitflap-muted:#b09a72; --th-splitflap-border:#352b1c;  --th-splitflap-accent:#e8b04b;
-  --th-splitflap-accent-on:#17130d; --th-splitflap-accent-lift:#f0bd60; --th-splitflap-2:#e8b04b;
-  /* Neon Stage — pop-poster energy, plum + magenta + cyan */
-  --th-neon-bg:#140726;         --th-neon-surface:#1e0e37;     --th-neon-fg:#ffffff;
-  --th-neon-muted:#b79ad6;      --th-neon-border:#3a1f5e;      --th-neon-accent:#ff3d9a;
-  --th-neon-accent-on:#1a0620;  --th-neon-accent-lift:#ff5aa6; --th-neon-2:#38e8ff;
-  /* Blade — ink + crimson, a steely action accent */
-  --th-blade-bg:#08090c;        --th-blade-surface:#14161c;    --th-blade-fg:#f1f2f6;
-  --th-blade-muted:#8a8f9c;     --th-blade-border:#23262f;     --th-blade-accent:#e11d2f;
-  --th-blade-accent-on:#ffffff; --th-blade-accent-lift:#f2303f; --th-blade-2:#f5a623;
-  /* Arcade — retro phosphor green, for the youngest player */
-  --th-arcade-bg:#060912;       --th-arcade-surface:#0d1420;   --th-arcade-fg:#e6fff0;
-  --th-arcade-muted:#6f9e86;    --th-arcade-border:#16233a;    --th-arcade-accent:#38f08a;
-  --th-arcade-accent-on:#052012; --th-arcade-accent-lift:#5cf5a2; --th-arcade-2:#38f0e0;
-  /* Flip — Ivory: a daylight flip board, ink tiles on a warm light wall */
-  --th-ivory-bg:#e9e5da;        --th-ivory-surface:#fbfaf6;    --th-ivory-fg:#232220;
-  --th-ivory-muted:#6f6d63;     --th-ivory-border:#d3cec1;     --th-ivory-accent:#0f766e;
-  --th-ivory-accent-on:#ffffff; --th-ivory-accent-lift:#12907f; --th-ivory-2:#0f766e;
-  /* Ambient washes — the fixed glow/stripe fields behind each preset */
-  --glow-fade: rgba(0,0,0,0);
-  --th-midnight-glow: rgba(47,155,255,0.12);
-  --th-splitflap-glow: rgba(232,176,75,0.14);
-  --th-neon-glow1: rgba(255,61,154,0.24);   --th-neon-glow2: rgba(56,232,255,0.20);
-  --th-blade-glow: rgba(225,29,47,0.10);    --th-blade-glow2: rgba(225,29,47,0.18);
-  --th-arcade-scan: rgba(56,240,138,0.055); --th-arcade-glow: rgba(56,240,138,0.12);
-
-  /* Night face and morning "OK to get up" light. Dim red / amber light is
-   * the least disruptive to sleep; brightness is applied as opacity. */
-  --nf-red:         #ff3b2f;
-  --nf-amber:       #ffa630;
-  --nf-grey:        #a1a1a6;
-  --wake-green:     #34c759;
+  /* App screens (Settings, PIN): one calm dark palette for every scene. */
+  --bg: #0e1328;
+  --surface: #182042;
+  --surface-2: #222b52;
+  --border: #303b68;
+  --fg: #f5f7ff;
+  --muted: #a3acd0;
+  --accent: #ffc83d;
+  --accent-on: #2b1d00;
+  --danger: #ff6b6b;
+  --success: #4ade80;
+  --warn: #ffb020;
+  /* On top of a scene: white ink and dark glass, readable on any sky. */
+  --ink: #ffffff;
+  --ink-soft: rgba(255,255,255,0.84);
+  --ink-faint: rgba(255,255,255,0.62);
+  --glass: rgba(9,14,38,0.30);
+  --glass-strong: rgba(9,14,38,0.55);
+  --glass-line: rgba(255,255,255,0.18);
+  --text-shadow: 0 0.4vmin 2.4vmin rgba(0,0,0,0.30);
+  --festive: linear-gradient(135deg, #ffd250, #ff8a5b);
+  --font: "Nunito", -apple-system, BlinkMacSystemFont, "Helvetica Neue", Arial, sans-serif;
+  --radius-sm: 10px;
+  --radius-md: 16px;
+  --radius-lg: 22px;
+  --radius-pill: 999px;
+  --focus-ring: 0 0 0 4px rgba(92,200,255,0.5);
+  --ease: cubic-bezier(0.28, 0, 0.22, 1);
+  /* Night face and the morning "OK to get up" light. */
+  --nf-red: #ff3b2f;
+  --nf-amber: #ffa630;
+  --nf-grey: #a1a1a6;
+  --wake-green: #34c759;
   --wake-green-ink: #04210e;
-  --wake-glow:      rgba(52,199,89,0.24);
-  --pill-wash:      rgba(127,127,127,0.18);
-
-  /* Live sky — gradient stops through the day (read by JS), sun, clouds,
-   * stars, and the ink used on the light (day) and dark (dawn/dusk) sky. */
-  --sky-night-top:#0b1026; --sky-night-bot:#1c2752;
-  --sky-dawn-top:#2e2a5e;  --sky-dawn-bot:#f0905f;
-  --sky-rise-top:#6aa6dc;  --sky-rise-bot:#ffc993;
-  --sky-day-top:#3b8ed6;   --sky-day-bot:#c4e6f8;
-  --sky-gold-top:#5d8fc6;  --sky-gold-bot:#f7c47c;
-  --sky-dusk-top:#2a2654;  --sky-dusk-bot:#e2725b;
-  --sky-sun:#fff6cf; --sky-sun-glow:rgba(255,224,140,0.45); --sky-cloud:#ffffff; --sky-star:#ffffff;
-  --th-sky-fg:#0e2440;  --th-sky-muted:#2f4c6b;  --th-sky-surface:rgba(255,255,255,0.42);  --th-sky-border:rgba(255,255,255,0.65);
-  --th-sky-accent:#0b63c4;  --th-sky-accent-on:#ffffff;
-  --th-skyd-fg:#f4f6ff; --th-skyd-muted:#c0c8ea; --th-skyd-surface:rgba(255,255,255,0.10); --th-skyd-border:rgba(255,255,255,0.20);
-  --th-skyd-accent:#ffd27a; --th-skyd-accent-on:#1a1530;
+  --wake-glow: rgba(52,199,89,0.30);
 }
 
-/* ── Clock themes ─────────────────────────────────────────────────────
- * Each theme binds one curated palette into the standard token names, so
- * every component above follows automatically. Same token names only —
- * nothing new — just remapped per preset. `.is-dark` marks the presets
- * that want the calm, chrome-light night treatment. */
-.th-paper { --bg:var(--th-paper-bg); --surface:var(--th-paper-surface); --fg:var(--th-paper-fg); --muted:var(--th-paper-muted); --border:var(--th-paper-border); --accent:var(--th-paper-accent); --accent-on:var(--th-paper-accent-on); --accent-hover:var(--th-paper-accent-lift); --accent-active:var(--th-paper-accent); }
-.th-midnight { --bg:var(--th-midnight-bg); --surface:var(--th-midnight-surface); --fg:var(--th-midnight-fg); --muted:var(--th-midnight-muted); --border:var(--th-midnight-border); --accent:var(--th-midnight-accent); --accent-on:var(--th-midnight-accent-on); --accent-hover:var(--th-midnight-accent-lift); --accent-active:var(--th-midnight-accent); }
-.th-splitflap { --bg:var(--th-splitflap-bg); --surface:var(--th-splitflap-surface); --fg:var(--th-splitflap-fg); --muted:var(--th-splitflap-muted); --border:var(--th-splitflap-border); --accent:var(--th-splitflap-accent); --accent-on:var(--th-splitflap-accent-on); --accent-hover:var(--th-splitflap-accent-lift); --accent-active:var(--th-splitflap-accent); }
-.th-neon { --bg:var(--th-neon-bg); --surface:var(--th-neon-surface); --fg:var(--th-neon-fg); --muted:var(--th-neon-muted); --border:var(--th-neon-border); --accent:var(--th-neon-accent); --accent-on:var(--th-neon-accent-on); --accent-hover:var(--th-neon-accent-lift); --accent-active:var(--th-neon-accent); }
-.th-blade { --bg:var(--th-blade-bg); --surface:var(--th-blade-surface); --fg:var(--th-blade-fg); --muted:var(--th-blade-muted); --border:var(--th-blade-border); --accent:var(--th-blade-accent); --accent-on:var(--th-blade-accent-on); --accent-hover:var(--th-blade-accent-lift); --accent-active:var(--th-blade-accent); }
-.th-arcade { --bg:var(--th-arcade-bg); --surface:var(--th-arcade-surface); --fg:var(--th-arcade-fg); --muted:var(--th-arcade-muted); --border:var(--th-arcade-border); --accent:var(--th-arcade-accent); --accent-on:var(--th-arcade-accent-on); --accent-hover:var(--th-arcade-accent-lift); --accent-active:var(--th-arcade-accent); }
-.th-sky { --bg:var(--sky-day-bot); --surface:var(--th-sky-surface); --fg:var(--th-sky-fg); --muted:var(--th-sky-muted); --border:var(--th-sky-border); --accent:var(--th-sky-accent); --accent-on:var(--th-sky-accent-on); --accent-hover:var(--th-sky-accent); --accent-active:var(--th-sky-accent); }
-.th-sky.sky-dark { --bg:var(--sky-night-top); --surface:var(--th-skyd-surface); --fg:var(--th-skyd-fg); --muted:var(--th-skyd-muted); --border:var(--th-skyd-border); --accent:var(--th-skyd-accent); --accent-on:var(--th-skyd-accent-on); --accent-hover:var(--th-skyd-accent); --accent-active:var(--th-skyd-accent); }
-.th-ivory { --bg:var(--th-ivory-bg); --surface:var(--th-ivory-surface); --fg:var(--th-ivory-fg); --muted:var(--th-ivory-muted); --border:var(--th-ivory-border); --accent:var(--th-ivory-accent); --accent-on:var(--th-ivory-accent-on); --accent-hover:var(--th-ivory-accent-lift); --accent-active:var(--th-ivory-accent); }
-
-/* Ambient field: a fixed, non-interactive wash behind everything. Kept
- * low-opacity on purpose so it never lowers text contrast. One flourish
- * per preset; Paper and the flip board stay clean. */
-.ambient { position: fixed; top:0; left:0; right:0; bottom:0; background: transparent; pointer-events: none; -webkit-transition: background 1.6s var(--ease-standard), opacity 1.6s var(--ease-standard); transition: background 1.6s var(--ease-standard), opacity 1.6s var(--ease-standard); }
-.th-midnight .ambient { background: -webkit-radial-gradient(120% 80% at 50% -8%, var(--th-midnight-glow), var(--glow-fade) 58%); background: radial-gradient(120% 80% at 50% -8%, var(--th-midnight-glow), var(--glow-fade) 58%); }
-.th-splitflap .ambient { background: -webkit-radial-gradient(120% 90% at 50% 118%, var(--th-splitflap-glow), var(--glow-fade) 58%); background: radial-gradient(120% 90% at 50% 118%, var(--th-splitflap-glow), var(--glow-fade) 58%); }
-.th-neon .ambient { background: -webkit-radial-gradient(55% 45% at 12% 8%, var(--th-neon-glow1), var(--glow-fade) 62%), -webkit-radial-gradient(58% 48% at 88% 96%, var(--th-neon-glow2), var(--glow-fade) 62%); background: radial-gradient(55% 45% at 12% 8%, var(--th-neon-glow1), var(--glow-fade) 62%), radial-gradient(58% 48% at 88% 96%, var(--th-neon-glow2), var(--glow-fade) 62%); }
-.th-blade .ambient { background: -webkit-linear-gradient(118deg, var(--glow-fade) 46%, var(--th-blade-glow) 46.4%, var(--glow-fade) 47%), -webkit-radial-gradient(90% 60% at 100% 100%, var(--th-blade-glow2), var(--glow-fade) 60%); background: linear-gradient(118deg, var(--glow-fade) 46%, var(--th-blade-glow) 46.4%, var(--glow-fade) 47%), radial-gradient(90% 60% at 100% 100%, var(--th-blade-glow2), var(--glow-fade) 60%); }
-.th-arcade .ambient { background: -webkit-repeating-linear-gradient(0deg, var(--th-arcade-scan) 0, var(--th-arcade-scan) 1px, var(--glow-fade) 1px, var(--glow-fade) 3px), -webkit-radial-gradient(100% 70% at 50% 120%, var(--th-arcade-glow), var(--glow-fade) 60%); background: repeating-linear-gradient(0deg, var(--th-arcade-scan) 0, var(--th-arcade-scan) 1px, var(--glow-fade) 1px, var(--glow-fade) 3px), radial-gradient(100% 70% at 50% 120%, var(--th-arcade-glow), var(--glow-fade) 60%); }
-
-/* ── Base ─────────────────────────────────────────────────────────── */
 * { box-sizing: border-box; -webkit-tap-highlight-color: transparent; }
-html, body { margin: 0; padding: 0; height: 100%; }
+html, body { margin: 0; padding: 0; height: 100%; background-color: #0b1030; }
 body {
-  font-family: -apple-system, BlinkMacSystemFont, var(--font-body);
-  background-color: var(--bg);
-  color: var(--fg);
-  overflow: hidden;
-  -webkit-user-select: none; user-select: none;
-  -webkit-touch-callout: none;
-  touch-action: manipulation;
-  -webkit-transition: background-color 1.6s var(--ease-standard), color 1.6s var(--ease-standard);
-  transition: background-color 1.6s var(--ease-standard), color 1.6s var(--ease-standard);
+  font-family: var(--font); font-weight: 700; color: var(--ink);
+  overflow: hidden; -webkit-user-select: none; user-select: none; -webkit-touch-callout: none;
+  touch-action: manipulation; -webkit-font-smoothing: antialiased; -webkit-text-size-adjust: 100%;
 }
 button, input, select { font-family: inherit; color: inherit; }
 [hidden] { display: none !important; }
 
-/* ── Stage ────────────────────────────────────────────────────────── */
+/* ── Scene ──────────────────────────────────────────────────────────── */
+.scene {
+  position: fixed; top: 0; left: 0; right: 0; bottom: 0; overflow: hidden; pointer-events: none;
+  --c0: #0b1030; --c1: #1d2a5c; --c2: #1f3350; --c3: #172a42; --c4: #0e1d30; --dk: 1; --lt: 0; --cl: 0.4;
+  background-color: var(--c0);
+  background-image: linear-gradient(to bottom, var(--c0), var(--c1));
+}
+.layer { position: absolute; top: 0; left: 0; right: 0; bottom: 0; display: none; }
+.sc-sky .l-stars, .sc-hills .l-stars, .sc-ocean .l-stars, .sc-aurora .l-stars, .sc-calm .l-stars,
+.sc-sky .l-shoot, .sc-hills .l-shoot, .sc-ocean .l-shoot, .sc-space .l-shoot, .sc-aurora .l-shoot,
+.sc-sky .l-orbs, .sc-hills .l-orbs, .sc-ocean .l-orbs,
+.sc-sky .l-clouds, .sc-hills .l-clouds, .sc-ocean .l-clouds,
+.sc-sky .l-birds, .sc-hills .l-birds, .sc-ocean .l-birds,
+.sc-hills .l-hills, .sc-ocean .l-sea, .sc-space .l-space, .sc-aurora .l-aurora { display: block; }
+
+/* stars & shooting stars */
+.l-stars { opacity: var(--dk); }
+.l-shoot { opacity: var(--dk); }
+.sc-space .l-shoot { opacity: 1; }
+.star { position: absolute; width: 2px; height: 2px; border-radius: 50%; background-color: #fff; }
+.star.b { width: 3px; height: 3px; box-shadow: 0 0 4px rgba(255,255,255,0.8); }
+.motion .star.tw { animation: twinkle 3s ease-in-out infinite alternate; }
+@keyframes twinkle { from { opacity: 1; } to { opacity: 0.15; } }
+.shoot {
+  position: absolute; width: 18vmin; height: 2px; border-radius: 2px; opacity: 0;
+  background-image: linear-gradient(to left, #fff, rgba(255,255,255,0));
+}
+.shoot.s1 { top: 10%; left: 72%; }
+.shoot.s2 { top: 22%; left: 40%; }
+.motion .shoot.s1 { animation: shoot 11s linear -2s infinite; }
+.motion .shoot.s2 { animation: shoot 17s linear -9s infinite; }
+@keyframes shoot {
+  0%   { opacity: 0; transform: translate3d(0,0,0) rotate(-29deg); }
+  1%   { opacity: 1; }
+  7%   { opacity: 0; transform: translate3d(-42vw,23vw,0) rotate(-29deg); }
+  100% { opacity: 0; transform: translate3d(-42vw,23vw,0) rotate(-29deg); }
+}
+
+/* sun & moon — JS moves them along an arc, gliding over each minute */
+.orb { position: absolute; left: 0; top: 0; border-radius: 50%; opacity: 0; transition: transform 60s linear, opacity 3s linear; }
+.sun {
+  width: 18vmin; height: 18vmin; margin: -9vmin 0 0 -9vmin;
+  background-image: radial-gradient(circle, #fffbe6 0, #fff0a8 27%, rgba(255,210,100,0.55) 40%, rgba(255,190,80,0) 70%);
+}
+.sun::before {
+  content: ""; position: absolute; top: -40%; left: -40%; right: -40%; bottom: -40%; border-radius: 50%;
+  background-image: radial-gradient(circle, rgba(255,222,130,0.35), rgba(255,222,130,0) 68%);
+}
+.motion .sun::before { animation: glow 5s ease-in-out infinite alternate; }
+@keyframes glow { from { transform: scale(0.8); opacity: 0.7; } to { transform: scale(1.15); opacity: 1; } }
+/* crescent = the lit edge of an inset shadow, so it works on any sky */
+.moon { width: 10vmin; height: 10vmin; margin: -5vmin 0 0 -5vmin; box-shadow: inset 3vmin -1.2vmin 0 0 #f6f1dc; }
+.moon::after { content: ""; position: absolute; top: -30%; left: -30%; right: -30%; bottom: -30%; border-radius: 50%; background-image: radial-gradient(circle, rgba(255,245,210,0.22), rgba(255,245,210,0) 65%); }
+
+/* clouds: a far layer and a faster near layer */
+.l-clouds { opacity: var(--cl); }
+.cloud { position: absolute; left: 0; height: 7vmin; border-radius: 7vmin; background-color: #fff; }
+.cloud::before, .cloud::after { content: ""; position: absolute; border-radius: 50%; background-color: #fff; }
+.cloud::before { width: 46%; height: 150%; left: 14%; top: -72%; }
+.cloud::after { width: 36%; height: 118%; left: 48%; top: -48%; }
+.cloud.k1 { top: 14%; width: 26vmin; opacity: 0.5;  transform: translate3d(6vw,0,0); }
+.cloud.k2 { top: 26%; width: 18vmin; opacity: 0.4;  transform: translate3d(48vw,0,0); }
+.cloud.k3 { top: 9%;  width: 22vmin; opacity: 0.45; transform: translate3d(78vw,0,0); }
+.cloud.k4 { top: 5%;  width: 38vmin; height: 9vmin; opacity: 0.85; transform: translate3d(30vw,0,0); }
+.cloud.k5 { top: 19%; width: 30vmin; height: 8vmin; opacity: 0.75; transform: translate3d(90vw,0,0); }
+.sc-ocean .cloud.k4, .sc-ocean .cloud.k5 { display: none; }
+.motion .cloud.k1 { animation: drift 150s linear -40s infinite; }
+.motion .cloud.k2 { animation: drift 190s linear -120s infinite; }
+.motion .cloud.k3 { animation: drift 170s linear -80s infinite; }
+.motion .cloud.k4 { animation: drift 75s linear -20s infinite; }
+.motion .cloud.k5 { animation: drift 95s linear -60s infinite; }
+@keyframes drift { from { transform: translate3d(-45vmin,0,0); } to { transform: translate3d(110vw,0,0); } }
+
+/* birds (seagulls over the ocean): a small flock crosses now and then */
+.l-birds { opacity: var(--lt); }
+.flock { position: absolute; top: 20%; left: 0; transform: translate3d(-15vw,0,0); }
+.sc-ocean .flock { top: 30%; }
+.motion .flock { animation: fly 45s linear -8s infinite; }
+@keyframes fly {
+  0%   { transform: translate3d(-15vw,4vh,0); }
+  45%  { transform: translate3d(112vw,-7vh,0); }
+  100% { transform: translate3d(112vw,-7vh,0); }
+}
+.bird { position: absolute; width: 4.4vmin; height: 2vmin; }
+.bird::before, .bird::after { content: ""; position: absolute; top: 0; width: 50%; height: 100%; border-top: 0.55vmin solid rgba(25,35,70,0.8); border-radius: 50% 50% 0 0; }
+.bird::before { left: 0; }
+.bird::after { right: 0; }
+.bird.b2 { left: 6vmin; top: 2.6vmin; width: 3.6vmin; }
+.bird.b3 { left: -5vmin; top: 3.8vmin; width: 3.2vmin; }
+.motion .bird { animation: flap 0.55s ease-in-out infinite alternate; }
+.motion .bird.b2 { animation-delay: -0.2s; }
+.motion .bird.b3 { animation-delay: -0.4s; }
+@keyframes flap { from { transform: scaleY(1); } to { transform: scaleY(0.3); } }
+
+/* hills: three layered hills, a windmill, and fireflies after dusk */
+.l-hills svg { position: absolute; left: 0; bottom: 0; width: 100%; height: 46%; display: block; }
+.hf { fill: var(--c2); }
+.hm { fill: var(--c3); }
+.hn { fill: var(--c4); }
+.mill { position: absolute; left: 76%; bottom: 19%; width: 2.4vmin; height: 11vmin; }
+.mill-tower { position: absolute; left: 0; bottom: 0; width: 100%; height: 100%; background-color: var(--c4); border-radius: 1.5vmin 1.5vmin 0 0; }
+.mill-rotor { position: absolute; left: 50%; top: 1.5vmin; width: 0; height: 0; }
+.motion .mill-rotor { animation: spin 9s linear infinite; }
+.mill-rotor i { position: absolute; left: -0.7vmin; bottom: 0; width: 1.4vmin; height: 7.5vmin; border-radius: 0.8vmin; background-color: var(--c4); transform-origin: 50% 100%; }
+.mill-rotor i:nth-child(2) { transform: rotate(90deg); }
+.mill-rotor i:nth-child(3) { transform: rotate(180deg); }
+.mill-rotor i:nth-child(4) { transform: rotate(270deg); }
+.mill-rotor b { position: absolute; left: -1vmin; top: -1vmin; width: 2vmin; height: 2vmin; border-radius: 50%; background-color: var(--c2); }
+@keyframes spin { from { transform: rotate(0deg); } to { transform: rotate(360deg); } }
+.flies { position: absolute; top: 0; left: 0; right: 0; bottom: 0; opacity: var(--dk); }
+.fly { position: absolute; width: 1vmin; height: 1vmin; border-radius: 50%; background-color: #fff69a; box-shadow: 0 0 1.6vmin 0.4vmin rgba(255,233,92,0.85); }
+.motion .fly { animation-name: wander, blink; animation-timing-function: ease-in-out, ease-in-out; animation-iteration-count: infinite, infinite; animation-direction: alternate, alternate; }
+@keyframes wander {
+  0%   { transform: translate3d(0,0,0); }
+  33%  { transform: translate3d(4vmin,-3vmin,0); }
+  66%  { transform: translate3d(-3vmin,-5vmin,0); }
+  100% { transform: translate3d(2vmin,1vmin,0); }
+}
+@keyframes blink { from { opacity: 1; } to { opacity: 0.1; } }
+
+/* ocean: three swells, a sailing boat, fish and bubbles */
+.wave { position: absolute; left: 0; width: 200%; bottom: 0; }
+.wave svg { display: block; width: 100%; height: 100%; }
+.wave.w1 { top: 52%; }
+.wave.w2 { top: 61%; }
+.wave.w3 { top: 72%; }
+.w1 path { fill: var(--c2); }
+.w2 path { fill: var(--c3); }
+.w3 path { fill: var(--c4); }
+.motion .wave.w1 { animation: swell 30s linear infinite; }
+.motion .wave.w2 { animation: swell 19s linear infinite; }
+.motion .wave.w3 { animation: swell 12s linear infinite; }
+.motion .wave svg { animation: bob 5s ease-in-out infinite alternate; }
+.motion .wave.w2 svg { animation-duration: 4s; animation-delay: -2s; }
+@keyframes swell { from { transform: translate3d(0,0,0); } to { transform: translate3d(-50%,0,0); } }
+@keyframes bob { from { transform: translate3d(0,-0.8vh,0); } to { transform: translate3d(0,0.8vh,0); } }
+.boat { position: absolute; top: 45.5%; left: 0; width: 10vmin; height: 9vmin; transform: translate3d(22vw,0,0); }
+.motion .boat { animation: sail 240s linear -70s infinite; }
+@keyframes sail { from { transform: translate3d(-12vw,0,0); } to { transform: translate3d(108vw,0,0); } }
+.boat-in { position: absolute; top: 0; left: 0; width: 100%; height: 100%; transform-origin: 50% 100%; }
+.motion .boat-in { animation: rock 4.5s ease-in-out infinite alternate; }
+@keyframes rock { from { transform: rotate(-5deg); } to { transform: rotate(5deg); } }
+.boat-sail { position: absolute; left: 3.4vmin; bottom: 2.6vmin; width: 0; height: 0; border-left: 4.4vmin solid #fff; border-top: 6vmin solid transparent; }
+.boat-sail2 { position: absolute; left: 1.2vmin; bottom: 2.6vmin; width: 0; height: 0; border-right: 2vmin solid #ffd9a0; border-top: 4.4vmin solid transparent; }
+.boat-hull { position: absolute; left: 0; bottom: 0; width: 100%; height: 2.6vmin; background-color: #c4513d; border-radius: 0 0 4vmin 4vmin; }
+.fish { position: absolute; left: 0; width: 7vmin; height: 3.4vmin; transform: translate3d(-12vw,0,0); }
+.fish::before { content: ""; position: absolute; right: 0; top: 0; width: 72%; height: 100%; border-radius: 50%; background-color: #ffb347; }
+.fish::after { content: ""; position: absolute; left: 0; top: 0.2vmin; width: 0; height: 0; border-left: 2.4vmin solid #ffb347; border-top: 1.5vmin solid transparent; border-bottom: 1.5vmin solid transparent; }
+.fish i { position: absolute; right: 1.2vmin; top: 0.9vmin; width: 0.7vmin; height: 0.7vmin; border-radius: 50%; background-color: #1b1b2f; z-index: 1; }
+.fish.f1 { top: 80%; }
+.fish.f2 { top: 89%; width: 5vmin; height: 2.4vmin; }
+.fish.f2::before { background-color: #ff7b9c; }
+.fish.f2::after { border-left-color: #ff7b9c; border-top-width: 1.1vmin; border-bottom-width: 1.1vmin; border-left-width: 1.8vmin; }
+.fish.f2 i { right: 0.9vmin; top: 0.6vmin; }
+.motion .fish.f1 { animation: swim 26s linear -5s infinite; }
+.motion .fish.f2 { animation: swim 34s linear -20s infinite; }
+@keyframes swim { from { transform: translate3d(-12vw,0,0); } to { transform: translate3d(110vw,0,0); } }
+.bubbles { position: absolute; top: 0; left: 0; right: 0; bottom: 0; }
+.bub { position: absolute; bottom: -3vmin; width: 1.6vmin; height: 1.6vmin; border-radius: 50%; border: 2px solid rgba(255,255,255,0.55); opacity: 0; }
+.motion .bub { animation-name: rise; animation-timing-function: ease-in; animation-iteration-count: infinite; }
+@keyframes rise {
+  0%   { transform: translate3d(0,0,0); opacity: 0; }
+  10%  { opacity: 0.9; }
+  100% { transform: translate3d(1.5vmin,-26vh,0); opacity: 0; }
+}
+
+/* space: turning star fields, drifting nebulae, a ringed planet, rockets */
+.neb { position: absolute; width: 90vmax; height: 90vmax; border-radius: 50%; opacity: 0.5; }
+.neb.n1 { top: -35vmax; left: -30vmax; background-image: radial-gradient(circle, var(--c2) 0, rgba(0,0,0,0) 64%); }
+.neb.n2 { bottom: -40vmax; right: -35vmax; background-image: radial-gradient(circle, var(--c3) 0, rgba(0,0,0,0) 64%); }
+.motion .neb.n1 { animation: floatA 38s ease-in-out infinite alternate; }
+.motion .neb.n2 { animation: floatB 50s ease-in-out infinite alternate; }
+@keyframes floatA { from { transform: translate3d(0,0,0) scale(1); } to { transform: translate3d(14vw,10vh,0) scale(1.2); } }
+@keyframes floatB { from { transform: translate3d(0,0,0) scale(1.1); } to { transform: translate3d(-12vw,-8vh,0) scale(0.9); } }
+.field { position: absolute; top: 50%; left: 50%; width: 150vmax; height: 150vmax; margin: -75vmax 0 0 -75vmax; }
+.motion .field.fd1 { animation: spin 360s linear infinite; }
+.motion .field.fd2 { animation: spin 600s linear infinite reverse; }
+.planet { position: absolute; right: 6%; top: 15%; width: 20vmin; height: 20vmin; }
+.motion .planet { animation: hover 8s ease-in-out infinite alternate; }
+@keyframes hover { from { transform: translate3d(0,-1.6vmin,0); } to { transform: translate3d(0,1.6vmin,0); } }
+.planet b { position: absolute; top: 0; left: 0; width: 100%; height: 100%; border-radius: 50%; background-image: radial-gradient(circle at 34% 30%, #ffe6bf 0, var(--c4) 46%, #3a1d3e 100%); box-shadow: inset -3vmin -2vmin 5vmin rgba(0,0,0,0.35); }
+.planet i { position: absolute; left: -32%; right: -32%; top: 41%; height: 18%; border-radius: 50%; border: 1vmin solid rgba(255,226,186,0.6); transform: rotate(-16deg); }
+.rocket { position: absolute; left: 0; top: 0; width: 6vmin; height: 12vmin; transform: translate3d(-15vw,90vh,0) rotate(51deg); }
+.motion .rocket { animation: launch 42s linear -30s infinite; }
+@keyframes launch {
+  0%   { transform: translate3d(-15vw,90vh,0) rotate(51deg); }
+  25%  { transform: translate3d(112vw,-20vh,0) rotate(51deg); }
+  100% { transform: translate3d(112vw,-20vh,0) rotate(51deg); }
+}
+.rocket svg { display: block; width: 100%; height: 100%; }
+.motion .flame { animation: flicker 0.12s linear infinite alternate; }
+@keyframes flicker { from { opacity: 1; } to { opacity: 0.45; } }
+
+/* aurora: big soft colour fields that slowly flow into each other */
+.blob { position: absolute; width: 80vmax; height: 80vmax; border-radius: 50%; opacity: 0.6; }
+.blob.a1 { top: -32vmax; left: -22vmax; background-image: radial-gradient(circle, var(--c2) 0, rgba(0,0,0,0) 62%); }
+.blob.a2 { top: -12vmax; right: -36vmax; background-image: radial-gradient(circle, var(--c3) 0, rgba(0,0,0,0) 62%); }
+.blob.a3 { bottom: -42vmax; left: 0; background-image: radial-gradient(circle, var(--c4) 0, rgba(0,0,0,0) 62%); }
+.blob.a4 { top: 8vmax; left: 22vmax; width: 60vmax; height: 60vmax; opacity: 0.4; background-image: radial-gradient(circle, var(--c2) 0, rgba(0,0,0,0) 62%); }
+.motion .blob.a1 { animation: aurA 21s ease-in-out infinite alternate; }
+.motion .blob.a2 { animation: aurB 27s ease-in-out infinite alternate; }
+.motion .blob.a3 { animation: aurC 24s ease-in-out infinite alternate; }
+.motion .blob.a4 { animation: aurD 33s ease-in-out infinite alternate; }
+@keyframes aurA { from { transform: translate3d(0,0,0) scale(1); } to { transform: translate3d(24vw,14vh,0) scale(1.25); } }
+@keyframes aurB { from { transform: translate3d(0,0,0) scale(1.1); } to { transform: translate3d(-26vw,18vh,0) scale(0.85); } }
+@keyframes aurC { from { transform: translate3d(0,0,0) scale(1); } to { transform: translate3d(20vw,-22vh,0) scale(1.2); } }
+@keyframes aurD { from { transform: translate3d(0,0,0) scale(1); } to { transform: translate3d(-18vw,-12vh,0) scale(1.4); } }
+
+/* ── Stage ──────────────────────────────────────────────────────────── */
 .stage {
   position: fixed; top: 0; left: 0; right: 0; bottom: 0;
-  height: 100%;
-  display: -webkit-flex; display: flex;
-  -webkit-flex-direction: column; flex-direction: column;
+  display: flex; flex-direction: column;
   padding: 3vmin 4vmin calc(3vmin + env(safe-area-inset-bottom, 0px));
-  -webkit-transition: -webkit-transform 2.4s ease-in-out, transform 2.4s ease-in-out, opacity 1.6s var(--ease-standard);
-  transition: transform 2.4s ease-in-out, opacity 1.6s var(--ease-standard);
+  transition: opacity 1.6s var(--ease);
 }
-.topbar {
-  display: -webkit-flex; display: flex;
-  -webkit-align-items: center; align-items: center;
-  -webkit-justify-content: space-between; justify-content: space-between;
-  min-height: 44px;
-  -webkit-flex: 0 0 auto; flex: 0 0 auto;
-}
-.greeting { font-size: 2.4vmin; font-weight: 600; letter-spacing: 0.01em; color: var(--muted); -webkit-transition: color 1.2s var(--ease-standard); transition: color 1.2s var(--ease-standard); }
+/* Home Screen app: the iPad's status bar overlays the top 20px. */
+.standalone .stage { padding-top: calc(3vmin + 20px); padding-top: calc(3vmin + max(20px, env(safe-area-inset-top, 0px))); }
+.topbar { display: flex; align-items: center; justify-content: space-between; min-height: 48px; flex: 0 0 auto; }
+.greeting { font-size: 2.6vmin; font-weight: 800; color: var(--ink); padding: 0.9vmin 2.2vmin; border-radius: var(--radius-pill); background-color: var(--glass); box-shadow: inset 0 0 0 1px var(--glass-line); }
+.topbar-right { display: flex; align-items: center; }
 .iconbtn {
-  -webkit-appearance: none; appearance: none;
-  position: relative;
-  width: 44px; height: 44px; border: none; border-radius: 50%;
-  background: transparent; color: var(--muted);
-  display: -webkit-flex; display: flex;
-  -webkit-align-items: center; align-items: center; -webkit-justify-content: center; justify-content: center;
-  opacity: 0.55; cursor: pointer;
-  -webkit-transition: opacity var(--motion-base) var(--ease-standard), background-color var(--motion-base) var(--ease-standard);
-  transition: opacity var(--motion-base) var(--ease-standard), background-color var(--motion-base) var(--ease-standard);
+  -webkit-appearance: none; appearance: none; position: relative; cursor: pointer;
+  width: 48px; height: 48px; margin-left: 10px; border: none; border-radius: 50%;
+  background-color: var(--glass); color: var(--ink); box-shadow: inset 0 0 0 1px var(--glass-line);
+  display: flex; align-items: center; justify-content: center;
 }
-.iconbtn:hover, .iconbtn:active { opacity: 1; background-color: var(--surface); }
-.iconbtn:focus { outline: none; box-shadow: var(--focus-ring); }
 .iconbtn svg { width: 22px; height: 22px; display: block; }
+.iconbtn:active { background-color: var(--glass-strong); }
+.iconbtn:focus { outline: none; box-shadow: inset 0 0 0 1px var(--glass-line), var(--focus-ring); }
+.timerbtn.is-running { width: auto; padding: 0 16px; border-radius: var(--radius-pill); background-color: var(--accent); color: var(--accent-on); box-shadow: none; }
+.timerbtn-txt { margin-left: 8px; font-size: 18px; font-weight: 900; }
+.timerbtn-txt:empty { display: none; }
+.lockdot { position: absolute; right: 2px; bottom: 2px; width: 16px; height: 16px; border-radius: 50%; background-color: var(--accent); color: var(--accent-on); display: none; align-items: center; justify-content: center; }
+body.is-locked .lockdot { display: flex; }
+.lockdot svg { width: 9px; height: 9px; display: block; }
 
-/* ── Clock core ───────────────────────────────────────────────────── */
-.core {
-  -webkit-flex: 1 1 auto; flex: 1 1 auto;
-  display: -webkit-flex; display: flex;
-  -webkit-flex-direction: column; flex-direction: column;
-  -webkit-align-items: center; align-items: center;
-  -webkit-justify-content: center; justify-content: center;
-  min-height: 0;
-}
-.weekstrip { display: -webkit-flex; display: flex; -webkit-justify-content: center; justify-content: center; margin-bottom: 2.4vmin; }
-.weekstrip span {
-  font-size: 1.9vmin; font-weight: 600; letter-spacing: 0.05em;
-  color: var(--muted); opacity: 0.7;
-  width: 4.4vmin; height: 4.4vmin; line-height: 4.4vmin;
-  text-align: center; margin: 0 0.4vmin; border-radius: 50%;
-  -webkit-transition: color var(--motion-base) var(--ease-standard), background-color var(--motion-base) var(--ease-standard), opacity var(--motion-base) var(--ease-standard);
-  transition: color var(--motion-base) var(--ease-standard), background-color var(--motion-base) var(--ease-standard), opacity var(--motion-base) var(--ease-standard);
-}
-.weekstrip span.is-today { color: var(--accent-on); background-color: var(--accent); opacity: 1; }
-.dow { font-size: 5.6vmin; font-weight: 600; line-height: 1.05; letter-spacing: var(--tracking-display); margin-bottom: 0.6vmin; }
-.clockrow {
-  display: -webkit-flex; display: flex;
-  -webkit-align-items: flex-start; align-items: flex-start;
-  -webkit-justify-content: center; justify-content: center;
-  line-height: 0.86;
-}
-.time {
-  font-size: 27vmin; font-weight: 600; letter-spacing: -0.02em;
-  font-variant-numeric: tabular-nums;
-  -webkit-font-feature-settings: "tnum" 1; font-feature-settings: "tnum" 1;
-  display: inline-block;
-}
-.secwrap {
-  display: -webkit-flex; display: flex;
-  -webkit-flex-direction: column; flex-direction: column;
-  -webkit-align-items: flex-start; align-items: flex-start;
-  margin-left: 1.6vmin; padding-top: 2vmin; line-height: 1;
-}
-.seconds { font-size: 7vmin; font-weight: 500; color: var(--muted); font-variant-numeric: tabular-nums; -webkit-font-feature-settings: "tnum" 1; font-feature-settings: "tnum" 1; }
-.meridiem { font-size: 3.4vmin; font-weight: 600; letter-spacing: 0.06em; color: var(--muted); margin-top: 1.4vmin; text-transform: uppercase; }
-.dateline { font-size: 3.2vmin; font-weight: 400; color: var(--muted); margin-top: 2.4vmin; letter-spacing: 0.005em; }
+.core { flex: 1 1 auto; display: flex; flex-direction: column; align-items: center; justify-content: center; min-height: 0; text-shadow: var(--text-shadow); }
+.weekstrip { display: flex; justify-content: center; margin-bottom: 1.6vmin; }
+.weekstrip span { width: 5vmin; height: 5vmin; line-height: 5vmin; margin: 0 0.5vmin; border-radius: 50%; text-align: center; font-size: 2.2vmin; font-weight: 900; color: var(--ink-faint); }
+.weekstrip span.is-today { background-color: var(--ink); color: #1b2350; text-shadow: none; }
+.dow { font-size: 6vmin; font-weight: 900; line-height: 1.05; letter-spacing: -0.01em; }
+.clockrow { display: flex; align-items: flex-start; justify-content: center; line-height: 0.92; }
+.time { font-size: 28vmin; font-weight: 900; letter-spacing: -0.01em; white-space: nowrap; }
+/* Every digit gets the same width so the time never jiggles. */
+.dg { display: inline-block; width: 0.6em; text-align: center; }
+.col { display: inline-block; width: 0.28em; text-align: center; position: relative; top: -0.06em; }
+.motion .time .col { animation: tick 2s steps(1, end) infinite; }
+@keyframes tick { 0%, 49% { opacity: 1; } 50%, 100% { opacity: 0.35; } }
+.secwrap { display: flex; flex-direction: column; align-items: flex-start; margin-left: 1.4vmin; padding-top: 3vmin; line-height: 1; }
+.seconds { font-size: 7vmin; font-weight: 800; color: var(--ink-soft); white-space: nowrap; }
+.seconds .dg { width: 0.62em; }
+.meridiem { font-size: 3.6vmin; font-weight: 900; letter-spacing: 0.06em; color: var(--ink-soft); margin-top: 1.2vmin; }
+.dateline { font-size: 3.4vmin; font-weight: 800; color: var(--ink-soft); margin-top: 2vmin; }
 
-/* ── Cards ────────────────────────────────────────────────────────── */
-.cards {
-  -webkit-flex: 0 0 auto; flex: 0 0 auto;
-  display: -webkit-flex; display: flex;
-  -webkit-justify-content: center; justify-content: center;
-  -webkit-flex-wrap: wrap; flex-wrap: wrap;
-  padding-bottom: 1vmin;
+/* flip face */
+.flipclock { --fw: 20vmin; --fh: 26vmin; --fd: 19vmin; display: none; flex-direction: column; align-items: center; text-shadow: none; }
+.face-flip .flipclock { display: flex; }
+.face-flip .clockrow { display: none; }
+.fliprow { display: flex; align-items: center; justify-content: center; }
+.fcard { position: relative; width: var(--fw); height: var(--fh); margin: 0 0.8vmin; perspective: 900px; }
+.fcard.is-empty { display: none; }
+.fc-half, .fc-flap { position: absolute; left: 0; right: 0; height: 50%; overflow: hidden; color: #fff; }
+.fc-half span, .fc-flap span { display: block; width: 100%; text-align: center; font-size: var(--fd); line-height: var(--fh); font-weight: 900; }
+.fc-top, .fc-flap-front { top: 0; border-radius: 2.2vmin 2.2vmin 0 0; background-color: #1a2350; }
+.fc-bottom, .fc-flap-back { bottom: 0; border-radius: 0 0 2.2vmin 2.2vmin; background-color: #151d45; }
+.fc-top { border-bottom: 1px solid rgba(0,0,0,0.45); }
+.fc-bottom { box-shadow: 0 1.4vmin 3vmin rgba(0,0,0,0.3); }
+.fc-bottom span, .fc-flap-back span { margin-top: calc(var(--fh) / -2); }
+.fc-flap { opacity: 0; z-index: 3; -webkit-backface-visibility: hidden; backface-visibility: hidden; }
+.fc-flap-front { transform-origin: bottom; }
+.fc-flap-back { transform-origin: top; }
+.fcard.is-flipping .fc-flap-front { opacity: 1; animation: flipTop 0.3s ease-in both; }
+.fcard.is-flipping .fc-flap-back { opacity: 1; animation: flipBottom 0.3s ease-out 0.15s both; }
+@keyframes flipTop { from { transform: rotateX(0deg); } to { transform: rotateX(-90deg); } }
+@keyframes flipBottom { from { transform: rotateX(90deg); } to { transform: rotateX(0deg); } }
+.fcolon { font-size: 11vmin; font-weight: 900; line-height: 1; margin: 0 0.4vmin; padding-bottom: 2.4vmin; text-shadow: var(--text-shadow); }
+.fmeta { margin-top: 2vmin; font-size: 3.4vmin; font-weight: 900; letter-spacing: 0.12em; color: var(--ink-soft); min-height: 1.2em; text-transform: uppercase; text-shadow: var(--text-shadow); }
+
+/* analog face — for learning to tell the time. Hour hand and hour
+ * numbers are coral, minute hand and minute numbers are blue. */
+.analog { display: none; flex-direction: column; align-items: center; }
+.face-analog .analog { display: flex; }
+.face-analog .clockrow { display: none; }
+.a-face { position: relative; width: 50vmin; height: 50vmin; border-radius: 50%; background-color: #fffdf6; box-shadow: 0 1.4vmin 4.5vmin rgba(0,0,0,0.32), inset 0 0 0 1vmin #ffe7a8; }
+.a-face svg { position: absolute; top: 0; left: 0; width: 100%; height: 100%; display: block; }
+.a-num { font-family: var(--font); font-weight: 900; font-size: 19px; fill: #ff5a4f; text-anchor: middle; }
+.a-min { font-family: var(--font); font-weight: 900; font-size: 7.5px; fill: #2f7ff0; text-anchor: middle; display: none; }
+.minute-nums .a-min { display: inline; }
+.a-tick { stroke: #c7cde0; stroke-width: 1; }
+.a-tick.big { stroke: #2a3566; stroke-width: 2.4; stroke-linecap: round; }
+.a-h { stroke: #ff5a4f; stroke-width: 8; stroke-linecap: round; }
+.a-m { stroke: #2f7ff0; stroke-width: 5.5; stroke-linecap: round; }
+.a-s { stroke: #ff9f1c; stroke-width: 1.8; stroke-linecap: round; }
+.a-hub { fill: #2a3566; }
+.a-hub2 { fill: #ff9f1c; }
+.a-digital { margin-top: 2.2vmin; font-size: 4.6vmin; font-weight: 900; }
+@media (orientation: landscape) {
+  .face-analog .weekstrip { display: none; }
+  .a-face { width: 44vmin; height: 44vmin; }
+  .a-digital { margin-top: 1.6vmin; font-size: 4.2vmin; }
+  .face-analog .dateline { margin-top: 1vmin; }
 }
-.card {
-  display: -webkit-flex; display: flex;
-  -webkit-align-items: center; align-items: center;
-  background-color: var(--surface);
-  border-radius: var(--radius-lg);
-  padding: 2.2vmin 2.8vmin;
-  margin: 0.8vmin 0.8vmin 0;
-  min-height: 44px;
-  -webkit-transition: background-color 1.2s var(--ease-standard);
-  transition: background-color 1.2s var(--ease-standard);
-}
-.card-ico { width: 3.4vmin; height: 3.4vmin; margin-right: 1.6vmin; color: var(--muted); -webkit-flex: 0 0 auto; flex: 0 0 auto; }
+
+/* ── Cards ──────────────────────────────────────────────────────────── */
+.cards { flex: 0 0 auto; display: flex; justify-content: center; flex-wrap: wrap; padding-bottom: 0.5vmin; }
+.card { display: flex; align-items: center; margin: 0.8vmin 0.8vmin 0; padding: 1.8vmin 2.6vmin; min-height: 44px; border-radius: var(--radius-lg); background-color: var(--glass); box-shadow: inset 0 0 0 1px var(--glass-line); }
+.card-ico { width: 3.6vmin; height: 3.6vmin; margin-right: 1.6vmin; color: var(--ink-soft); flex: 0 0 auto; }
 .card-ico svg { width: 100%; height: 100%; display: block; }
-.card-txt { display: -webkit-flex; display: flex; -webkit-flex-direction: column; flex-direction: column; }
-.card-kicker { font-size: 1.7vmin; font-weight: 600; letter-spacing: 0.08em; text-transform: uppercase; color: var(--muted); }
-.card-value { font-size: 2.6vmin; font-weight: 600; margin-top: 0.3vmin; white-space: nowrap; }
-.card-sub { font-size: 1.9vmin; color: var(--muted); margin-top: 0.2vmin; white-space: nowrap; }
-.card.is-festival { background-color: var(--accent); }
-.card.is-festival .card-kicker, .card.is-festival .card-sub, .card.is-festival .card-ico { color: var(--accent-on); opacity: 0.85; }
-.card.is-festival .card-value { color: var(--accent-on); }
-.is-dark .card { background-color: transparent; padding: 0; margin-top: 0.4vmin; }
-.is-dark .card--quiet { display: none; }
-.is-dark .card-ico, .is-dark .card-kicker, .is-dark .card-sub { opacity: 0.85; }
-.is-dark .cards { -webkit-flex-direction: column; flex-direction: column; -webkit-align-items: center; align-items: center; }
+.card-txt { display: flex; flex-direction: column; }
+.card-kicker { font-size: 1.6vmin; font-weight: 900; letter-spacing: 0.1em; text-transform: uppercase; color: var(--ink-faint); }
+.card-value { font-size: 2.8vmin; font-weight: 900; margin-top: 0.2vmin; white-space: nowrap; }
+.card-sub { font-size: 1.9vmin; font-weight: 700; color: var(--ink-soft); margin-top: 0.1vmin; white-space: nowrap; }
+.card.is-festival { background-image: var(--festive); box-shadow: none; color: #3a1d00; }
+.card.is-festival .card-kicker, .card.is-festival .card-sub, .card.is-festival .card-ico { color: rgba(58,29,0,0.72); }
 
-/* ── Live sky (the "Sky" preset) ──────────────────────────────────────
- * A fixed layer behind the clock whose gradient follows the real sun:
- * night → dawn → day → golden hour → dusk, from sunrise/sunset computed
- * for the chosen city. JS sets the gradient, the sun's position and the
- * star/cloud opacity once a minute; only clouds and some stars animate,
- * and only with transform/opacity so an old iPad can keep up. */
-.sky { position: fixed; top: 0; left: 0; right: 0; bottom: 0; display: none; overflow: hidden; pointer-events: none; background-color: var(--bg); }
-.th-sky .sky { display: block; }
-.is-night .sky { display: none; }
-.sky-stars, .sky-clouds { position: absolute; top: 0; left: 0; right: 0; bottom: 0; opacity: 0; -webkit-transition: opacity 4s linear; transition: opacity 4s linear; }
-.star { position: absolute; width: 2px; height: 2px; border-radius: 50%; background-color: var(--sky-star); }
-.star.big { width: 3px; height: 3px; }
-.sky-sun {
-  position: absolute; left: 0; top: 0; width: 16vmin; height: 16vmin; margin: -8vmin 0 0 -8vmin; border-radius: 50%; opacity: 0;
-  background: -webkit-radial-gradient(circle, var(--sky-sun) 0, var(--sky-sun) 28%, var(--sky-sun-glow) 40%, var(--glow-fade) 70%);
-  background: radial-gradient(circle, var(--sky-sun) 0, var(--sky-sun) 28%, var(--sky-sun-glow) 40%, var(--glow-fade) 70%);
-  -webkit-transition: -webkit-transform 60s linear, opacity 3s linear; transition: transform 60s linear, opacity 3s linear;
-}
-.sky-cloud { position: absolute; left: 0; height: 8vmin; border-radius: 8vmin; background-color: var(--sky-cloud); opacity: 0.45; }
-.sky-cloud::before, .sky-cloud::after { content: ""; position: absolute; border-radius: 50%; background-color: var(--sky-cloud); }
-.sky-cloud::before { width: 45%; height: 150%; left: 15%; top: -70%; }
-.sky-cloud::after { width: 35%; height: 115%; left: 48%; top: -45%; }
-.sky-cloud.c1 { top: 14%; width: 30vmin; -webkit-transform: translate3d(12vw,0,0); transform: translate3d(12vw,0,0); }
-.sky-cloud.c2 { top: 21%; width: 20vmin; opacity: 0.32; -webkit-transform: translate3d(62vw,0,0); transform: translate3d(62vw,0,0); }
-.sky-cloud.c3 { top: 9%; width: 24vmin; opacity: 0.38; -webkit-transform: translate3d(80vw,0,0); transform: translate3d(80vw,0,0); }
-.tprev.tsky { background: -webkit-linear-gradient(top, var(--sky-day-top), var(--sky-gold-bot)); background: linear-gradient(to bottom, var(--sky-day-top), var(--sky-gold-bot)); }
-
-/* Moving background: drifting clouds, twinkling stars, and a slow
- * "breathing" of the other presets' glow. Never at night. */
-@-webkit-keyframes drift { from { -webkit-transform: translate3d(-40vmin,0,0); } to { -webkit-transform: translate3d(105vw,0,0); } }
-@keyframes drift { from { transform: translate3d(-40vmin,0,0); } to { transform: translate3d(105vw,0,0); } }
-@-webkit-keyframes twinkle { from { opacity: 1; } to { opacity: 0.2; } }
-@keyframes twinkle { from { opacity: 1; } to { opacity: 0.2; } }
-@-webkit-keyframes breathe { from { -webkit-transform: scale(1); } to { -webkit-transform: scale(1.12) translate3d(0,-2%,0); } }
-@keyframes breathe { from { transform: scale(1); } to { transform: scale(1.12) translate3d(0,-2%,0); } }
-.motion .sky-cloud.c1 { -webkit-animation: drift 170s linear -40s infinite; animation: drift 170s linear -40s infinite; }
-.motion .sky-cloud.c2 { -webkit-animation: drift 240s linear -150s infinite; animation: drift 240s linear -150s infinite; }
-.motion .sky-cloud.c3 { -webkit-animation: drift 200s linear -95s infinite; animation: drift 200s linear -95s infinite; }
-.motion .star.tw { -webkit-animation: twinkle 3.5s ease-in-out infinite alternate; animation: twinkle 3.5s ease-in-out infinite alternate; }
-.motion .ambient { -webkit-animation: breathe 28s ease-in-out infinite alternate; animation: breathe 28s ease-in-out infinite alternate; }
-.is-night .ambient { -webkit-animation: none; animation: none; }
-@media (prefers-reduced-motion: reduce) {
-  .motion .sky-cloud, .motion .star.tw, .motion .ambient { -webkit-animation: none !important; animation: none !important; }
-}
-
-/* ── Night face ───────────────────────────────────────────────────────
- * From bedtime until the morning wake time the clock drops to dim red /
- * amber digits on true black; everything but the time and "stay in bed
- * until…" is hidden. A tap "peeks" at the full face for a few seconds.
- * Brightness is applied as opacity on .stage from JS. */
+/* ── Night face ─────────────────────────────────────────────────────
+ * From bedtime until wake-up: no scene, true black, only the time and
+ * "Stay in bed until…" in dim red / amber / grey. A tap peeks. */
 .nf-red   { --nf: var(--nf-red); }
 .nf-amber { --nf: var(--nf-amber); }
 .nf-grey  { --nf: var(--nf-grey); }
-body.is-night { background-color: var(--ink-0); }
-.is-night .ambient, .is-night .wakeglow { opacity: 0; }
-.is-night .stage {
-  --fg: var(--nf); --muted: var(--nf); --accent: var(--nf); --accent-on: var(--ink-0);
-  --surface: transparent; --border: transparent;
-  color: var(--nf);
-}
-.is-night .time { font-weight: 400; }
-.is-night .seconds, .is-night .flipclock { display: none !important; }
-.is-night .clockrow { display: -webkit-flex !important; display: flex !important; }
+body.is-night, html.night-bg { background-color: #000; }
+.is-night .scene, .is-night .wakeglow { display: none; }
+.is-night .stage { --ink: var(--nf); --ink-soft: var(--nf); --ink-faint: var(--nf); --glass: transparent; --glass-line: transparent; color: var(--nf); }
+.is-night .core, .is-night .greeting { text-shadow: none; }
+.is-night .time { font-weight: 700; }
+.is-night .time .col { animation: none; }
+.is-night .seconds, .is-night .flipclock, .is-night .analog { display: none !important; }
+.is-night .clockrow { display: flex !important; }
+.is-night .weekstrip span.is-today { background-color: var(--nf); color: #000; }
+.is-night .timerbtn.is-running { background-color: transparent; color: var(--nf); }
 .is-night:not(.is-peek) .topbar { visibility: hidden; }
 .is-night:not(.is-peek) .weekstrip,
 .is-night:not(.is-peek) .dow,
 .is-night:not(.is-peek) .dateline,
 .is-night:not(.is-peek) .cards { display: none; }
-.nightnote, .wakenote { display: none; -webkit-align-items: center; align-items: center; }
-.is-night .nightnote { display: -webkit-flex; display: flex; }
-.is-wake .wakenote { display: -webkit-flex; display: flex; }
-.nightnote { margin-top: 3vmin; font-size: 3.2vmin; font-weight: 500; color: var(--muted); }
-.nightnote svg, .wakenote svg { width: 1.3em; height: 1.3em; margin-right: 0.5em; display: block; -webkit-flex: 0 0 auto; flex: 0 0 auto; }
-.wakenote { margin-top: 3vmin; padding: 1.6vmin 3.6vmin; border-radius: var(--radius-pill); background-color: var(--wake-green); color: var(--wake-green-ink); font-size: 3.4vmin; font-weight: 700; }
-.wakeglow {
-  position: fixed; top: 0; left: 0; right: 0; bottom: 0; pointer-events: none; opacity: 0;
-  background: -webkit-radial-gradient(120% 80% at 50% 110%, var(--wake-glow), var(--glow-fade) 62%);
-  background: radial-gradient(120% 80% at 50% 110%, var(--wake-glow), var(--glow-fade) 62%);
-  -webkit-transition: opacity 1.6s var(--ease-standard); transition: opacity 1.6s var(--ease-standard);
-}
+.nightnote, .wakenote { display: none; align-items: center; }
+.is-night .nightnote, .is-wake .wakenote { display: flex; }
+.nightnote { margin-top: 3vmin; font-size: 3.2vmin; font-weight: 800; color: var(--ink-soft); }
+.nightnote svg, .wakenote svg { width: 1.3em; height: 1.3em; margin-right: 0.5em; display: block; flex: 0 0 auto; }
+.wakenote { margin-top: 3vmin; padding: 1.6vmin 3.6vmin; border-radius: var(--radius-pill); background-color: var(--wake-green); color: var(--wake-green-ink); font-size: 3.4vmin; font-weight: 900; text-shadow: none; }
+.wakeglow { position: fixed; top: 0; left: 0; right: 0; bottom: 0; pointer-events: none; opacity: 0; transition: opacity 1.6s var(--ease); background-image: radial-gradient(120% 80% at 50% 110%, var(--wake-glow), rgba(52,199,89,0) 62%); }
 .is-wake .wakeglow { opacity: 1; }
 
-/* "Tap to turn on alarm sound": Safari only allows audio after a tap, so
- * this stays up until the first tap after every page load. */
+/* "Tap to turn on alarm sound" (Safari needs one tap per page load). */
 .soundpill {
-  position: fixed; left: 50%; top: calc(3vmin + 52px + env(safe-area-inset-top, 0px)); z-index: 60;
-  -webkit-transform: translateX(-50%); transform: translateX(-50%);
-  padding: 1vmin 2.6vmin; border-radius: var(--radius-pill);
-  background-color: var(--pill-wash); color: var(--muted);
-  font-size: 1.9vmin; font-weight: 600; white-space: nowrap; pointer-events: none;
+  position: fixed; left: 50%; top: calc(3vmin + 58px + env(safe-area-inset-top, 0px)); z-index: 60;
+  transform: translateX(-50%); padding: 1vmin 2.6vmin; border-radius: var(--radius-pill);
+  background-color: var(--glass-strong); box-shadow: inset 0 0 0 1px var(--glass-line); color: var(--ink);
+  font-size: 1.9vmin; font-weight: 800; white-space: nowrap; pointer-events: none;
 }
-.is-night .soundpill { color: var(--nf); opacity: 0.5; }
+.standalone .soundpill { top: calc(3vmin + 78px); }
+.is-night .soundpill { background-color: transparent; box-shadow: none; color: var(--nf); opacity: 0.5; }
 
-/* ── Alarm overlay ────────────────────────────────────────────────── */
+/* ── Alarm / time's-up overlay: a sun rises behind the buttons ─────── */
 .alarm {
-  position: fixed; top: 0; left: 0; right: 0; bottom: 0; z-index: 200;
-  display: none;
-  -webkit-flex-direction: column; flex-direction: column;
-  -webkit-align-items: center; align-items: center; -webkit-justify-content: center; justify-content: center;
-  color: var(--ink-on-dark); text-align: center; padding: 8vmin;
-  background: -webkit-radial-gradient(circle at 50% 120%, var(--dawn-1) 0%, var(--dawn-2) 34%, var(--dawn-3) 72%, var(--ink-0) 100%);
-  background: radial-gradient(circle at 50% 120%, var(--dawn-1) 0%, var(--dawn-2) 34%, var(--dawn-3) 72%, var(--ink-0) 100%);
-  -webkit-animation: sunrise 22s ease-out both; animation: sunrise 22s ease-out both;
+  position: fixed; top: 0; left: 0; right: 0; bottom: 0; z-index: 200; overflow: hidden;
+  display: none; flex-direction: column; align-items: center; justify-content: center;
+  color: #fff; text-align: center; padding: 8vmin;
+  background-image: linear-gradient(to bottom, #1a0f3a 0%, #6a2c5e 45%, #ef7a4f 85%, #ffb35c 100%);
 }
-.alarm.is-open { display: -webkit-flex; display: flex; }
-@-webkit-keyframes sunrise { from { -webkit-filter: brightness(0.25); filter: brightness(0.25); } to { -webkit-filter: brightness(1); filter: brightness(1); } }
-@keyframes sunrise { from { filter: brightness(0.25); } to { filter: brightness(1); } }
-.alarm-kicker { font-size: 2.6vmin; font-weight: 600; letter-spacing: 0.22em; text-transform: uppercase; opacity: 0.85; }
-.alarm-time { font-size: 20vmin; font-weight: 600; line-height: 0.9; margin: 2vmin 0; font-variant-numeric: tabular-nums; }
-.alarm-label { font-size: 4vmin; font-weight: 600; margin-bottom: 6vmin; }
-.alarm-actions { display: -webkit-flex; display: flex; -webkit-align-items: center; align-items: center; -webkit-justify-content: center; justify-content: center; }
-.abtn { -webkit-appearance: none; appearance: none; cursor: pointer; font-size: 2.8vmin; font-weight: 600; padding: 1.8vmin 5vmin; min-height: 56px; border-radius: var(--radius-pill); border: none; margin: 0 1.4vmin; }
-.abtn-primary { background: var(--ink-on-dark); color: var(--ink-on-light); }
-.abtn-ghost { background: var(--on-dark-wash); color: var(--ink-on-dark); border: 1px solid var(--on-dark-line); }
-.abtn:focus { outline: none; box-shadow: 0 0 0 4px var(--on-dark-ring); }
-.alarm-note { font-size: 2.2vmin; opacity: 0.85; margin-top: 4vmin; min-height: 1.4em; max-width: 48ch; line-height: 1.4; }
+.alarm.is-open { display: flex; }
+.alarm::before { content: ""; position: absolute; left: 50%; bottom: -30vmin; width: 60vmin; height: 60vmin; margin-left: -30vmin; border-radius: 50%; background-image: radial-gradient(circle, #fff6c8 0, #ffd36b 35%, rgba(255,190,90,0) 70%); animation: sunup 20s ease-out both; }
+.alarm::after { content: ""; position: absolute; top: 0; left: 0; right: 0; bottom: 0; background-color: #000; animation: dawn 20s ease-out both; pointer-events: none; }
+@keyframes sunup { from { transform: translate3d(0,30vmin,0); } to { transform: translate3d(0,0,0); } }
+@keyframes dawn { from { opacity: 0.7; } to { opacity: 0; } }
+.alarm > * { position: relative; z-index: 1; }
+.alarm-kicker { font-size: 2.8vmin; font-weight: 900; letter-spacing: 0.24em; text-transform: uppercase; opacity: 0.9; }
+.alarm-time { font-size: 20vmin; font-weight: 900; line-height: 0.95; margin: 2vmin 0; text-shadow: 0 1vmin 4vmin rgba(0,0,0,0.3); }
+.alarm-time.is-text { font-size: 13vmin; }
+.alarm-label { font-size: 4.4vmin; font-weight: 900; margin-bottom: 6vmin; }
+.alarm-actions { display: flex; align-items: center; justify-content: center; }
+.abtn { -webkit-appearance: none; appearance: none; cursor: pointer; font-size: 3vmin; font-weight: 900; padding: 2vmin 6vmin; min-height: 60px; border-radius: var(--radius-pill); border: none; margin: 0 1.4vmin; }
+.abtn-primary { background-color: #fff; color: #2a1430; }
+.abtn-ghost { background-color: rgba(255,255,255,0.16); color: #fff; box-shadow: inset 0 0 0 2px rgba(255,255,255,0.55); }
+.abtn:focus { outline: none; box-shadow: 0 0 0 4px rgba(255,255,255,0.55); }
+.alarm-note { font-size: 2.2vmin; font-weight: 700; opacity: 0.9; margin-top: 4vmin; min-height: 1.4em; max-width: 48ch; line-height: 1.4; }
 
-/* ── Settings sheet ───────────────────────────────────────────────── */
+/* ── App screens: Settings, PIN ────────────────────────────────────── */
 .sheet { position: fixed; top: 0; left: 0; right: 0; bottom: 0; z-index: 90; display: none; background-color: var(--bg); color: var(--fg); overflow-y: auto; -webkit-overflow-scrolling: touch; }
 .sheet.is-open { display: block; }
-.sheet-inner { max-width: 720px; margin: 0 auto; padding: 5vmin 4vmin 14vmin; }
-.sheet-head { display: -webkit-flex; display: flex; -webkit-align-items: center; align-items: center; -webkit-justify-content: space-between; justify-content: space-between; margin-bottom: 4vmin; }
-.sheet-head h2 { font-size: 3.6vmin; font-weight: 600; margin: 0; letter-spacing: var(--tracking-display); }
-.sect { margin-bottom: 5vmin; }
-.sect > h3 { font-size: 2vmin; font-weight: 600; letter-spacing: 0.1em; text-transform: uppercase; color: var(--muted); margin: 0 0 1.6vmin; }
-.row { display: -webkit-flex; display: flex; -webkit-align-items: center; align-items: center; -webkit-justify-content: space-between; justify-content: space-between; padding: 1.6vmin 0; border-bottom: 1px solid var(--border); }
+.sheet-inner { max-width: 760px; margin: 0 auto; padding: 5vmin 4vmin 14vmin; }
+.standalone .sheet-inner { padding-top: calc(5vmin + 20px); }
+.sheet-head { display: flex; align-items: center; justify-content: space-between; margin-bottom: 3vmin; }
+.sheet-head h2 { font-size: 4.4vmin; font-weight: 900; margin: 0; }
+.sect { margin-bottom: 3vmin; padding: 2.4vmin 3vmin; border-radius: var(--radius-lg); background-color: var(--surface); }
+.sect > h3 { font-size: 1.9vmin; font-weight: 900; letter-spacing: 0.12em; text-transform: uppercase; color: var(--accent); margin: 0 0 1vmin; }
+.row { display: flex; align-items: center; justify-content: space-between; padding: 1.6vmin 0; border-bottom: 1px solid var(--border); }
 .row:last-child { border-bottom: none; }
-.row-label { font-size: 2.4vmin; font-weight: 500; }
-.row-help { font-size: 1.9vmin; color: var(--muted); margin-top: 0.4vmin; max-width: 42ch; line-height: 1.4; }
-.row-ctl { -webkit-flex: 0 0 auto; flex: 0 0 auto; margin-left: 2vmin; }
-input[type="text"], input[type="time"], input[type="date"] {
-  -webkit-appearance: none; appearance: none; font-size: 2.4vmin; padding: 1.4vmin 1.8vmin; min-height: 44px;
-  border-radius: var(--radius-sm); border: 1px solid var(--border); background-color: var(--surface); color: var(--fg);
+.row-label { font-size: 2.4vmin; font-weight: 800; }
+.row-help { font-size: 1.9vmin; font-weight: 600; color: var(--muted); margin-top: 0.4vmin; max-width: 46ch; line-height: 1.4; }
+.row-ctl { flex: 0 0 auto; margin-left: 2vmin; }
+.version { text-align: center; font-size: 1.8vmin; font-weight: 700; color: var(--muted); margin-top: 2vmin; }
+input[type="text"], input[type="time"], input[type="date"], select {
+  -webkit-appearance: none; appearance: none; font-size: 2.3vmin; font-weight: 700; padding: 1.3vmin 1.8vmin; min-height: 44px;
+  border-radius: var(--radius-sm); border: 1px solid var(--border); background-color: var(--surface-2); color: var(--fg);
 }
-input:focus { outline: none; box-shadow: var(--focus-ring); border-color: var(--accent); }
-.seg { display: -webkit-inline-flex; display: inline-flex; background-color: var(--surface); border-radius: var(--radius-sm); padding: 3px; }
-.seg button { -webkit-appearance: none; appearance: none; border: none; background: transparent; cursor: pointer; font-size: 2.1vmin; font-weight: 600; color: var(--muted); padding: 1.2vmin 2.4vmin; min-height: 44px; border-radius: 6px; }
+select { cursor: pointer; }
+input:focus, select:focus { outline: none; box-shadow: var(--focus-ring); border-color: var(--accent); }
+::-webkit-calendar-picker-indicator { filter: invert(1); }
+.seg { display: inline-flex; padding: 4px; border-radius: var(--radius-pill); background-color: var(--surface-2); }
+.seg button { -webkit-appearance: none; appearance: none; border: none; background: transparent; cursor: pointer; font-size: 2.1vmin; font-weight: 800; color: var(--muted); padding: 1.2vmin 2.4vmin; min-height: 44px; border-radius: var(--radius-pill); }
 .seg button.is-on { background-color: var(--accent); color: var(--accent-on); }
 .seg button:focus { outline: none; box-shadow: var(--focus-ring); }
-.switch { -webkit-appearance: none; appearance: none; width: 52px; height: 32px; border-radius: 16px; background-color: var(--border); position: relative; cursor: pointer; -webkit-transition: background-color var(--motion-base); transition: background-color var(--motion-base); border: none; }
-.switch::after { content: ""; position: absolute; top: 2px; left: 2px; width: 28px; height: 28px; border-radius: 50%; background: var(--ink-on-dark); box-shadow: var(--shadow-knob); -webkit-transition: -webkit-transform var(--motion-base) var(--ease-standard), transform var(--motion-base) var(--ease-standard); transition: transform var(--motion-base) var(--ease-standard); }
+.switch { -webkit-appearance: none; appearance: none; position: relative; cursor: pointer; width: 56px; height: 34px; border: none; border-radius: 17px; background-color: var(--border); transition: background-color 0.2s; }
+.switch::after { content: ""; position: absolute; top: 3px; left: 3px; width: 28px; height: 28px; border-radius: 50%; background-color: #fff; box-shadow: 0 1px 4px rgba(0,0,0,0.35); transition: transform 0.2s var(--ease); }
 .switch.is-on { background-color: var(--accent); }
-.switch.is-on::after { -webkit-transform: translateX(20px); transform: translateX(20px); }
+.switch.is-on::after { transform: translateX(22px); }
 .switch:focus { outline: none; box-shadow: var(--focus-ring); }
-input[type="range"] { -webkit-appearance: none; appearance: none; width: 150px; height: 4px; border-radius: 2px; background: var(--border); }
-input[type="range"]::-webkit-slider-thumb { -webkit-appearance: none; width: 26px; height: 26px; border-radius: 50%; background: var(--ink-on-dark); box-shadow: var(--shadow-thumb); border: 1px solid var(--border); }
-.btn { -webkit-appearance: none; appearance: none; border: none; cursor: pointer; font-size: 2.1vmin; font-weight: 600; padding: 1.4vmin 2.6vmin; min-height: 44px; border-radius: var(--radius-pill); }
+input[type="range"] { -webkit-appearance: none; appearance: none; width: 160px; height: 6px; border-radius: 3px; background-color: var(--border); }
+input[type="range"]::-webkit-slider-thumb { -webkit-appearance: none; width: 28px; height: 28px; border-radius: 50%; background-color: #fff; box-shadow: 0 1px 4px rgba(0,0,0,0.4); }
+.btn { -webkit-appearance: none; appearance: none; border: none; cursor: pointer; font-size: 2.1vmin; font-weight: 900; padding: 1.4vmin 2.8vmin; min-height: 44px; border-radius: var(--radius-pill); }
 .btn-primary { background-color: var(--accent); color: var(--accent-on); }
-.btn-primary:hover { background-color: var(--accent-hover); }
-.btn-primary:active { background-color: var(--accent-active); }
-.btn-quiet { background-color: var(--surface); color: var(--fg); border: 1px solid var(--border); }
-.btn-danger { background-color: transparent; color: var(--danger); border: 1px solid var(--border); }
+.btn-quiet { background-color: var(--surface-2); color: var(--fg); box-shadow: inset 0 0 0 1px var(--border); }
+.btn-danger { background-color: transparent; color: var(--danger); box-shadow: inset 0 0 0 1px var(--border); }
 .btn:focus { outline: none; box-shadow: var(--focus-ring); }
-.alarmrow { background-color: var(--surface); border-radius: var(--radius-lg); padding: 2vmin 2.4vmin; margin-bottom: 1.6vmin; }
-.alarmrow-top { display: -webkit-flex; display: flex; -webkit-align-items: center; align-items: center; -webkit-justify-content: space-between; justify-content: space-between; }
-.alarmrow-time { font-size: 3.4vmin; font-weight: 600; font-variant-numeric: tabular-nums; }
-.alarmrow-label { font-size: 2vmin; color: var(--muted); margin-top: 0.4vmin; }
-.alarm-head-right { display: -webkit-flex; display: flex; -webkit-align-items: center; align-items: center; }
-.daysrow { display: -webkit-flex; display: flex; margin-top: 1.4vmin; }
-.daybtn { -webkit-appearance: none; appearance: none; cursor: pointer; border: 1px solid var(--border); background: var(--bg); color: var(--muted); font-size: 1.8vmin; font-weight: 600; width: 44px; height: 44px; border-radius: 50%; margin-right: 0.8vmin; }
-.daybtn.is-on { background: var(--accent); color: var(--accent-on); border-color: var(--accent); }
-.daybtn:focus { outline: none; box-shadow: var(--focus-ring); }
-.holidayrow { display: -webkit-flex; display: flex; -webkit-align-items: center; align-items: center; -webkit-justify-content: space-between; justify-content: space-between; padding: 1.2vmin 0; border-bottom: 1px solid var(--border); }
-.holidayrow input { border: none; background: transparent; padding: 0.6vmin 0.4vmin; min-height: 44px; }
-.holidayrow input:focus { box-shadow: none; border-bottom: 1px solid var(--accent); border-radius: 0; }
-.holidayrow .hname { -webkit-flex: 1 1 auto; flex: 1 1 auto; font-size: 2.2vmin; }
-.holidayrow .hdate { -webkit-flex: 0 0 auto; flex: 0 0 auto; font-size: 2vmin; color: var(--muted); width: 46%; }
-select {
-  -webkit-appearance: none; appearance: none; cursor: pointer; font-size: 2.1vmin; font-weight: 500;
-  padding: 1.2vmin 1.8vmin; min-height: 44px; border-radius: var(--radius-sm);
-  border: 1px solid var(--border); background-color: var(--bg); color: var(--fg);
-}
-select:focus { outline: none; box-shadow: var(--focus-ring); border-color: var(--accent); }
-.alarmrow-opts { display: -webkit-flex; display: flex; -webkit-align-items: center; align-items: center; margin-top: 1.4vmin; }
-.alarmrow-opts .alarm-label-input { -webkit-flex: 1 1 auto; flex: 1 1 auto; min-width: 0; margin-right: 1.2vmin; background-color: var(--bg); }
-.alarmrow-foot { display: -webkit-flex; display: flex; -webkit-align-items: center; align-items: center; -webkit-justify-content: space-between; justify-content: space-between; margin-top: 1.4vmin; }
-.opt { display: -webkit-flex; display: flex; -webkit-align-items: center; align-items: center; }
-.optlabel { margin-left: 1.2vmin; font-size: 2vmin; color: var(--muted); }
-.stat { font-size: 2.1vmin; font-weight: 600; color: var(--muted); text-align: right; max-width: 30ch; }
+.stat { font-size: 2.1vmin; font-weight: 800; color: var(--muted); text-align: right; max-width: 30ch; }
 .stat.is-ok { color: var(--success); }
 .stat.is-bad { color: var(--danger); }
-.pauserow { display: -webkit-flex; display: flex; -webkit-align-items: center; align-items: center; }
+
+.alarmrow { background-color: var(--surface-2); border-radius: var(--radius-md); padding: 2vmin 2.4vmin; margin-bottom: 1.6vmin; }
+.alarmrow-top { display: flex; align-items: center; justify-content: space-between; }
+.alarmrow-time { font-size: 3.6vmin; font-weight: 900; }
+.alarmrow-label { font-size: 2vmin; font-weight: 700; color: var(--muted); margin-top: 0.4vmin; }
+.alarm-head-right { display: flex; align-items: center; }
+.daysrow { display: flex; margin-top: 1.4vmin; }
+.daybtn { -webkit-appearance: none; appearance: none; cursor: pointer; width: 44px; height: 44px; margin-right: 0.8vmin; border-radius: 50%; border: 1px solid var(--border); background-color: var(--surface); color: var(--muted); font-size: 1.8vmin; font-weight: 900; }
+.daybtn.is-on { background-color: var(--accent); color: var(--accent-on); border-color: var(--accent); }
+.daybtn:focus { outline: none; box-shadow: var(--focus-ring); }
+.alarmrow-opts { display: flex; align-items: center; margin-top: 1.4vmin; }
+.alarmrow-opts .alarm-label-input { flex: 1 1 auto; min-width: 0; margin-right: 1.2vmin; }
+.alarmrow-foot { display: flex; align-items: center; justify-content: space-between; margin-top: 1.4vmin; }
+.opt { display: flex; align-items: center; }
+.optlabel { margin-left: 1.2vmin; font-size: 2vmin; font-weight: 700; color: var(--muted); }
+.pauserow { display: flex; align-items: center; }
 .pauserow .btn { margin-left: 1.2vmin; }
-.hup { display: -webkit-flex; display: flex; -webkit-justify-content: space-between; justify-content: space-between; -webkit-align-items: center; align-items: center; padding: 1.2vmin 0; border-bottom: 1px solid var(--border); font-size: 2.1vmin; }
+.holidayrow { display: flex; align-items: center; justify-content: space-between; padding: 1.2vmin 0; border-bottom: 1px solid var(--border); }
+.holidayrow input { border: none; background: transparent; padding: 0.6vmin 0.4vmin; min-height: 44px; }
+.holidayrow input:focus { box-shadow: none; border-bottom: 1px solid var(--accent); border-radius: 0; }
+.holidayrow .hname { flex: 1 1 auto; font-size: 2.2vmin; }
+.holidayrow .hdate { flex: 0 0 auto; width: 46%; font-size: 2vmin; color: var(--muted); }
+.hup { display: flex; justify-content: space-between; align-items: center; padding: 1.2vmin 0; border-bottom: 1px solid var(--border); font-size: 2.1vmin; }
 .hup-tag { color: var(--muted); font-size: 1.8vmin; white-space: nowrap; margin-left: 2vmin; }
-.hup-tag.is-off { color: var(--accent); font-weight: 600; }
-.subhead { font-size: 1.9vmin; font-weight: 600; color: var(--muted); margin: 2.4vmin 0 0.6vmin; }
+.hup-tag.is-off { color: var(--accent); font-weight: 900; }
+.subhead { font-size: 1.9vmin; font-weight: 900; color: var(--muted); margin: 2.4vmin 0 0.6vmin; }
 
-/* ── Theme gallery (settings) ─────────────────────────────────────── */
-.tgrid { display: grid; grid-template-columns: repeat(2, 1fr); gap: 2vmin; }
-@media (min-width: 700px) { .tgrid { grid-template-columns: repeat(3, 1fr); } }
-.tcard { -webkit-appearance: none; appearance: none; cursor: pointer; text-align: left; padding: 0; border: 1px solid var(--border); border-radius: var(--radius-lg); overflow: hidden; background-color: var(--bg); color: var(--fg);
-  -webkit-transition: border-color var(--motion-base) var(--ease-standard), box-shadow var(--motion-base) var(--ease-standard); transition: border-color var(--motion-base) var(--ease-standard), box-shadow var(--motion-base) var(--ease-standard); }
+/* scene gallery */
+.tgrid { display: grid; grid-template-columns: repeat(3, 1fr); grid-gap: 2vmin; gap: 2vmin; margin: 1vmin 0 1.4vmin; }
+@media (max-width: 600px) { .tgrid { grid-template-columns: repeat(2, 1fr); } }
+.tcard { -webkit-appearance: none; appearance: none; cursor: pointer; text-align: left; padding: 0; border: none; border-radius: var(--radius-md); overflow: hidden; background-color: var(--surface-2); color: var(--fg); box-shadow: inset 0 0 0 1px var(--border); }
+.tcard.is-on { box-shadow: 0 0 0 3px var(--accent); }
 .tcard:focus { outline: none; box-shadow: var(--focus-ring); }
-.tcard.is-on { border-color: var(--accent); box-shadow: 0 0 0 2px var(--accent); }
-.tprev { position: relative; display: -webkit-flex; display: flex; -webkit-align-items: center; align-items: center; -webkit-justify-content: center; justify-content: center; height: 68px; background-color: var(--bg); color: var(--fg); font-size: 27px; font-weight: 600; letter-spacing: -0.02em; font-variant-numeric: tabular-nums; }
-.tprev .tdot { width: 9px; height: 9px; border-radius: 50%; background-color: var(--accent); margin-right: 8px; -webkit-flex: 0 0 auto; flex: 0 0 auto; }
-.tprev .tseg { background-color: var(--surface); border: 1px solid var(--border); border-radius: 5px; padding: 2px 6px; margin: 0 2px; }
-.tmeta { padding: 1.4vmin 1.8vmin 1.8vmin; border-top: 1px solid var(--border); }
-.tname { display: block; font-size: 2.2vmin; font-weight: 600; }
-.thint { display: block; font-size: 1.7vmin; color: var(--muted); margin-top: 0.2vmin; }
+.tprev { display: flex; align-items: center; justify-content: center; height: 86px; color: #fff; }
+.tprev svg { width: 46px; height: 46px; display: block; }
+.pv-sky    { background-image: linear-gradient(to bottom, #2f86da, #8ccdf3); }
+.pv-hills  { background-image: linear-gradient(to bottom, #2f86da 0, #8ccdf3 52%, #5cb85c 53%, #3a9a48 100%); }
+.pv-ocean  { background-image: linear-gradient(to bottom, #2f86da 0, #8ccdf3 50%, #1584c4 51%, #0b65a8 100%); }
+.pv-space  { background-image: radial-gradient(circle at 70% 70%, #3a4fb0, #0a1430 70%); }
+.pv-aurora { background-image: linear-gradient(135deg, #0d2a4a 0, #2ee6c5 42%, #4fa8ff 62%, #b44bff 100%); }
+.pv-calm   { background-image: linear-gradient(to bottom, #1a2140, #2e3a66); }
+.tmeta { display: block; padding: 1.4vmin 1.8vmin 1.8vmin; }
+.tname { display: block; font-size: 2.2vmin; font-weight: 900; }
+.thint { display: block; font-size: 1.7vmin; font-weight: 700; color: var(--muted); margin-top: 0.2vmin; }
 
-/* ── Parental lock ─────────────────────────────────────────────────
- * A PIN gate in front of Settings only. The clock, the alarm and the
- * snooze button stay available to the child; the gear is not. */
-.lockdot {
-  position: absolute; right: 6px; bottom: 6px;
-  width: 15px; height: 15px; border-radius: 50%;
-  background-color: var(--accent); color: var(--accent-on);
-  display: none;
-  -webkit-align-items: center; align-items: center;
-  -webkit-justify-content: center; justify-content: center;
-}
-body.is-locked .lockdot { display: -webkit-flex; display: flex; }
-.lockdot svg { width: 9px; height: 9px; display: block; }
-
-.lockscreen {
-  position: fixed; top: 0; left: 0; right: 0; bottom: 0; z-index: 120;
-  background-color: var(--bg); color: var(--fg);
-  display: none;
-  -webkit-flex-direction: column; flex-direction: column;
-  -webkit-align-items: center; align-items: center;
-  -webkit-justify-content: center; justify-content: center;
-  padding: 5vmin 4vmin calc(5vmin + env(safe-area-inset-bottom, 0px));
-  overflow-y: auto; -webkit-overflow-scrolling: touch;
-  text-align: center;
-}
-.lockscreen.is-open { display: -webkit-flex; display: flex; }
-.lock-badge {
-  width: 64px; height: 64px; border-radius: 50%;
-  background-color: var(--surface); color: var(--muted);
-  display: -webkit-flex; display: flex;
-  -webkit-align-items: center; align-items: center; -webkit-justify-content: center; justify-content: center;
-  margin-bottom: 3.4vmin;
-}
+/* PIN lock */
+.lockscreen { position: fixed; top: 0; left: 0; right: 0; bottom: 0; z-index: 120; display: none; flex-direction: column; align-items: center; justify-content: center; padding: 5vmin 4vmin calc(5vmin + env(safe-area-inset-bottom, 0px)); overflow-y: auto; -webkit-overflow-scrolling: touch; text-align: center; background-color: var(--bg); color: var(--fg); }
+.lockscreen.is-open { display: flex; }
+.lock-badge { width: 64px; height: 64px; border-radius: 50%; background-color: var(--surface-2); color: var(--accent); display: flex; align-items: center; justify-content: center; margin-bottom: 3.4vmin; }
 .lock-badge svg { width: 30px; height: 30px; display: block; }
-.lock-title { font-size: 4.4vmin; font-weight: 600; letter-spacing: var(--tracking-display); }
-.lock-sub { font-size: 2.4vmin; color: var(--muted); margin-top: 1.2vmin; min-height: 3em; max-width: 32ch; line-height: 1.4; -webkit-transition: color var(--motion-fast) var(--ease-standard); transition: color var(--motion-fast) var(--ease-standard); }
+.lock-title { font-size: 4.4vmin; font-weight: 900; }
+.lock-sub { font-size: 2.4vmin; font-weight: 700; color: var(--muted); margin-top: 1.2vmin; min-height: 3em; max-width: 32ch; line-height: 1.4; }
 .lock-sub.is-error { color: var(--danger); }
-.pindots { display: -webkit-flex; display: flex; margin: 4vmin 0 6vmin; }
-.pindot {
-  width: 15px; height: 15px; border-radius: 50%; border: 2px solid var(--border); margin: 0 9px;
-  -webkit-transition: background-color var(--motion-fast) var(--ease-standard), border-color var(--motion-fast) var(--ease-standard);
-  transition: background-color var(--motion-fast) var(--ease-standard), border-color var(--motion-fast) var(--ease-standard);
-}
+.pindots { display: flex; margin: 4vmin 0 6vmin; }
+.pindot { width: 16px; height: 16px; margin: 0 9px; border-radius: 50%; border: 2px solid var(--border); transition: background-color 0.15s, border-color 0.15s; }
 .pindot.is-filled { background-color: var(--accent); border-color: var(--accent); }
-.pindots.is-error { -webkit-animation: pinshake .5s var(--ease-standard); animation: pinshake .5s var(--ease-standard); }
-@-webkit-keyframes pinshake { 10%,90% { -webkit-transform: translateX(-3px); } 20%,80% { -webkit-transform: translateX(5px); } 30%,50%,70% { -webkit-transform: translateX(-8px); } 40%,60% { -webkit-transform: translateX(8px); } }
-@keyframes pinshake { 10%,90% { transform: translateX(-3px); } 20%,80% { transform: translateX(5px); } 30%,50%,70% { transform: translateX(-8px); } 40%,60% { transform: translateX(8px); } }
-.keypad { display: grid; grid-template-columns: repeat(3, 1fr); gap: 2.4vmin; }
-.key {
-  -webkit-appearance: none; appearance: none; cursor: pointer;
-  width: 19vmin; height: 19vmin; max-width: 84px; max-height: 84px;
-  border-radius: 50%; border: none;
-  background-color: var(--surface); color: var(--fg);
-  font-size: 4.2vmin; font-weight: 600;
-  font-variant-numeric: tabular-nums;
-  display: -webkit-flex; display: flex;
-  -webkit-align-items: center; align-items: center; -webkit-justify-content: center; justify-content: center;
-  -webkit-transition: background-color var(--motion-fast) var(--ease-standard); transition: background-color var(--motion-fast) var(--ease-standard);
-}
+.pindots.is-error { animation: pinshake 0.5s var(--ease); }
+@keyframes pinshake { 10%, 90% { transform: translateX(-3px); } 20%, 80% { transform: translateX(5px); } 30%, 50%, 70% { transform: translateX(-8px); } 40%, 60% { transform: translateX(8px); } }
+.keypad { display: grid; grid-template-columns: repeat(3, 1fr); grid-gap: 2.4vmin; gap: 2.4vmin; }
+.key { -webkit-appearance: none; appearance: none; cursor: pointer; width: 19vmin; height: 19vmin; max-width: 84px; max-height: 84px; border-radius: 50%; border: none; background-color: var(--surface-2); color: var(--fg); font-size: 4.2vmin; font-weight: 900; display: flex; align-items: center; justify-content: center; }
 @media (min-width: 700px) { .key { font-size: 32px; } }
 .key:active { background-color: var(--border); }
 .key:focus { outline: none; box-shadow: var(--focus-ring); }
 .key.is-blank { visibility: hidden; pointer-events: none; }
 .key.is-soft { background-color: transparent; color: var(--muted); }
-.key.is-soft:active { background-color: var(--surface); }
-.key svg { width: 24px; height: 24px; display: block; }
+.key svg { width: 26px; height: 26px; display: block; }
 .lock-cancel { margin-top: 6vmin; }
 
-/* ── Countdown timer ──────────────────────────────────────────────────
- * Opened from the hourglass next to the gear. Big preset buttons, then a
- * ring that empties as time runs out (turns amber for the last 10%).
- * While running, the hourglass button shows the time left. */
-.topbar-right { display: -webkit-flex; display: flex; -webkit-align-items: center; align-items: center; }
-.timerbtn { margin-right: 6px; }
-.timerbtn.is-running { width: auto; padding: 0 14px; opacity: 1; color: var(--accent); background-color: var(--surface); border-radius: var(--radius-pill); }
-.timerbtn-txt { margin-left: 6px; font-size: 17px; font-weight: 600; font-variant-numeric: tabular-nums; -webkit-font-feature-settings: "tnum" 1; font-feature-settings: "tnum" 1; }
-.timerbtn-txt:empty { display: none; }
-.timerview {
-  position: fixed; top: 0; left: 0; right: 0; bottom: 0; z-index: 85; display: none;
-  -webkit-flex-direction: column; flex-direction: column; -webkit-align-items: center; align-items: center;
-  background-color: var(--bg); color: var(--fg);
-  padding: 4vmin 4vmin calc(4vmin + env(safe-area-inset-bottom, 0px)); overflow-y: auto; -webkit-overflow-scrolling: touch;
-}
-.timerview.is-open { display: -webkit-flex; display: flex; }
-.timer-head { width: 100%; max-width: 720px; display: -webkit-flex; display: flex; -webkit-justify-content: space-between; justify-content: space-between; -webkit-align-items: center; align-items: center; margin-bottom: 3vmin; }
-.timer-head h2 { font-size: 3.6vmin; font-weight: 600; margin: 0; letter-spacing: var(--tracking-display); }
+/* ── Countdown timer: dark glass over the moving scene ─────────────── */
+.timerview { position: fixed; top: 0; left: 0; right: 0; bottom: 0; z-index: 85; display: none; flex-direction: column; align-items: center; padding: 4vmin 4vmin calc(4vmin + env(safe-area-inset-bottom, 0px)); overflow-y: auto; -webkit-overflow-scrolling: touch; background-color: rgba(8,12,32,0.55); color: #fff; }
+.timerview.is-open { display: flex; }
+.standalone .timerview { padding-top: calc(4vmin + 20px); }
+.timer-head { width: 100%; max-width: 720px; display: flex; justify-content: space-between; align-items: center; margin-bottom: 3vmin; }
+.timer-head h2 { font-size: 4.4vmin; font-weight: 900; margin: 0; text-shadow: var(--text-shadow); }
+.timerview .btn-quiet { background-color: var(--glass-strong); color: #fff; box-shadow: inset 0 0 0 1px var(--glass-line); }
+.timerview .btn-danger { background-color: var(--glass-strong); color: #ff8a8a; box-shadow: inset 0 0 0 1px var(--glass-line); }
 .timer-pick { width: 100%; max-width: 720px; margin-top: auto; margin-bottom: auto; }
-.chips { display: -webkit-flex; display: flex; -webkit-flex-wrap: wrap; flex-wrap: wrap; -webkit-justify-content: center; justify-content: center; margin-bottom: 4vmin; }
-.chip { -webkit-appearance: none; appearance: none; cursor: pointer; border: 1px solid var(--border); background-color: var(--surface); color: var(--fg); font-size: 2.2vmin; font-weight: 600; padding: 1.2vmin 2.6vmin; min-height: 44px; border-radius: var(--radius-pill); margin: 0.6vmin; }
-.chip.is-on { background-color: var(--accent); color: var(--accent-on); border-color: var(--accent); }
+.chips { display: flex; flex-wrap: wrap; justify-content: center; margin-bottom: 4vmin; }
+.chip { -webkit-appearance: none; appearance: none; cursor: pointer; margin: 0.6vmin; padding: 1.2vmin 2.6vmin; min-height: 44px; border: none; border-radius: var(--radius-pill); background-color: var(--glass-strong); box-shadow: inset 0 0 0 1px var(--glass-line); color: #fff; font-size: 2.2vmin; font-weight: 800; }
+.chip.is-on { background-color: var(--accent); color: var(--accent-on); box-shadow: none; }
 .chip:focus, .tbtn:focus { outline: none; box-shadow: var(--focus-ring); }
-.timer-grid { display: grid; grid-template-columns: repeat(3, 1fr); gap: 2.4vmin; max-width: 560px; margin: 0 auto; }
-.tbtn { -webkit-appearance: none; appearance: none; cursor: pointer; border: none; background-color: var(--surface); color: var(--fg); border-radius: var(--radius-lg); padding: 2.6vmin 0; min-height: 64px; font-size: 6vmin; font-weight: 600; font-variant-numeric: tabular-nums; line-height: 1; }
-.tbtn small { display: block; font-size: 1.9vmin; font-weight: 600; letter-spacing: 0.08em; text-transform: uppercase; color: var(--muted); margin-top: 0.8vmin; }
-.tbtn:active { background-color: var(--border); }
-.timer-run { -webkit-flex: 1 1 auto; flex: 1 1 auto; display: -webkit-flex; display: flex; -webkit-flex-direction: column; flex-direction: column; -webkit-align-items: center; align-items: center; -webkit-justify-content: center; justify-content: center; }
+.timer-grid { display: grid; grid-template-columns: repeat(3, 1fr); grid-gap: 2.4vmin; gap: 2.4vmin; max-width: 560px; margin: 0 auto; }
+.tbtn { -webkit-appearance: none; appearance: none; cursor: pointer; border: none; border-radius: var(--radius-lg); padding: 2.6vmin 0; min-height: 64px; background-color: var(--glass-strong); box-shadow: inset 0 0 0 1px var(--glass-line); color: #fff; font-size: 6vmin; font-weight: 900; line-height: 1; }
+.tbtn small { display: block; margin-top: 0.8vmin; font-size: 1.9vmin; font-weight: 900; letter-spacing: 0.08em; text-transform: uppercase; color: var(--ink-faint); }
+.tbtn:active { background-color: rgba(255,255,255,0.2); }
+.timer-run { flex: 1 1 auto; display: flex; flex-direction: column; align-items: center; justify-content: center; }
 .timer-ringwrap { position: relative; width: 62vmin; height: 62vmin; }
-.timer-ring { width: 100%; height: 100%; display: block; -webkit-transform: rotate(-90deg); transform: rotate(-90deg); }
-.tr-track { fill: none; stroke: var(--border); stroke-width: 10; }
-.tr-fill { fill: none; stroke: var(--accent); stroke-width: 10; stroke-linecap: round; stroke-dasharray: 339.29; -webkit-transition: stroke-dashoffset 1s linear, stroke 0.6s; transition: stroke-dashoffset 1s linear, stroke 0.6s; }
-.timer-run.is-low .tr-fill { stroke: var(--warn); }
-.timer-center { position: absolute; top: 0; left: 0; right: 0; bottom: 0; display: -webkit-flex; display: flex; -webkit-flex-direction: column; flex-direction: column; -webkit-align-items: center; align-items: center; -webkit-justify-content: center; justify-content: center; }
-.timer-left { font-size: 13vmin; font-weight: 600; letter-spacing: -0.02em; font-variant-numeric: tabular-nums; -webkit-font-feature-settings: "tnum" 1; font-feature-settings: "tnum" 1; }
-.timer-label { font-size: 3.2vmin; font-weight: 600; color: var(--muted); margin-top: 1vmin; min-height: 1.2em; }
-.timer-actions { display: -webkit-flex; display: flex; margin-top: 4vmin; }
+.timer-ring { width: 100%; height: 100%; display: block; transform: rotate(-90deg); }
+.tr-track { fill: rgba(9,14,38,0.45); stroke: rgba(255,255,255,0.18); stroke-width: 10; }
+.tr-fill { fill: none; stroke: var(--accent); stroke-width: 10; stroke-linecap: round; stroke-dasharray: 339.29; transition: stroke-dashoffset 1s linear, stroke 0.6s; }
+.timer-run.is-low .tr-fill { stroke: #ff6b5b; }
+.timer-center { position: absolute; top: 0; left: 0; right: 0; bottom: 0; display: flex; flex-direction: column; align-items: center; justify-content: center; }
+.timer-left { font-size: 13vmin; font-weight: 900; letter-spacing: -0.01em; }
+.timer-label { font-size: 3.2vmin; font-weight: 800; color: var(--ink-soft); margin-top: 1vmin; min-height: 1.2em; }
+.timer-actions { display: flex; margin-top: 4vmin; }
 .timer-actions .btn { margin: 0 1.2vmin; font-size: 2.6vmin; padding: 1.6vmin 4vmin; min-height: 56px; }
-.alarm-time.is-text { font-size: 13vmin; }
-
-/* ── Flip clock face ──────────────────────────────────────────────── */
-.flipclock { --fcard-w: 21vmin; --fcard-h: 25vmin; --fdigit: 15.5vmin; display: none; -webkit-flex-direction: column; flex-direction: column; -webkit-align-items: center; align-items: center; }
-.face-flip .flipclock { display: -webkit-flex; display: flex; }
-.face-flip .clockrow { display: none; }
-.fliprow { display: -webkit-flex; display: flex; -webkit-align-items: center; align-items: center; -webkit-justify-content: center; justify-content: center; }
-.fcard { position: relative; width: var(--fcard-w); height: var(--fcard-h); margin: 0 0.9vmin; -webkit-perspective: 900px; perspective: 900px; }
-.fcard.is-empty { display: none; }
-.fcard .fc-half { position: absolute; left: 0; right: 0; height: 50%; overflow: hidden; background-color: var(--surface); color: var(--fg); }
-.fcard .fc-half span,
-.fcard .fc-flap span { display: block; width: 100%; text-align: center; font-size: var(--fdigit); line-height: var(--fcard-h); font-weight: 600; font-variant-numeric: tabular-nums; -webkit-font-feature-settings: "tnum" 1; font-feature-settings: "tnum" 1; }
-.fcard .fc-top { top: 0; border-radius: var(--radius-md) var(--radius-md) 0 0; border-bottom: 1px solid var(--border); box-shadow: inset 0 1px 0 var(--edge-hi); }
-.fcard .fc-bottom { bottom: 0; border-radius: 0 0 var(--radius-md) var(--radius-md); box-shadow: inset 0 -1px 0 var(--edge-lo); }
-.fcard .fc-bottom span { margin-top: calc(var(--fcard-h) / -2); }
-.fcard .fc-flap { position: absolute; left: 0; right: 0; height: 50%; overflow: hidden; background-color: var(--surface); color: var(--fg); opacity: 0; z-index: 3; -webkit-backface-visibility: hidden; backface-visibility: hidden; }
-.fcard .fc-flap-front { top: 0; border-radius: var(--radius-md) var(--radius-md) 0 0; -webkit-transform-origin: bottom; transform-origin: bottom; }
-.fcard .fc-flap-back { bottom: 0; border-radius: 0 0 var(--radius-md) var(--radius-md); -webkit-transform-origin: top; transform-origin: top; }
-.fcard .fc-flap-back span { margin-top: calc(var(--fcard-h) / -2); }
-.fcard.is-flipping .fc-flap-front { opacity: 1; -webkit-animation: flipTop .30s ease-in both; animation: flipTop .30s ease-in both; }
-.fcard.is-flipping .fc-flap-back { opacity: 1; -webkit-animation: flipBottom .30s ease-out .15s both; animation: flipBottom .30s ease-out .15s both; }
-@-webkit-keyframes flipTop { from { -webkit-transform: rotateX(0deg); } to { -webkit-transform: rotateX(-90deg); } }
-@keyframes flipTop { from { transform: rotateX(0deg); } to { transform: rotateX(-90deg); } }
-@-webkit-keyframes flipBottom { from { -webkit-transform: rotateX(90deg); } to { -webkit-transform: rotateX(0deg); } }
-@keyframes flipBottom { from { transform: rotateX(90deg); } to { transform: rotateX(0deg); } }
-.fcolon { font-size: 9vmin; font-weight: 600; line-height: 1; color: var(--muted); margin: 0 0.4vmin; padding-bottom: 4vmin; -webkit-animation: colonblink 2s steps(1, end) infinite; animation: colonblink 2s steps(1, end) infinite; }
-@-webkit-keyframes colonblink { 0%, 49% { opacity: 1; } 50%, 100% { opacity: 0.28; } }
-@keyframes colonblink { 0%, 49% { opacity: 1; } 50%, 100% { opacity: 0.28; } }
-.fmeta { margin-top: 2vmin; font-size: 3.4vmin; font-weight: 500; letter-spacing: 0.12em; color: var(--muted); font-variant-numeric: tabular-nums; min-height: 1.2em; text-transform: uppercase; }
 
 @media (orientation: portrait) {
-  .time { font-size: 30vmin; }
-  .dow { font-size: 6.4vmin; }
-  .dateline { font-size: 3.6vmin; }
-  .card-value { font-size: 3vmin; }
-  .flipclock { --fcard-w: 18vmin; --fcard-h: 22vmin; --fdigit: 13.6vmin; }
-  .fcolon { font-size: 7.4vmin; padding-bottom: 3.2vmin; }
-  .fmeta { font-size: 3.2vmin; }
+  .dow { font-size: 6.6vmin; }
+  .dateline { font-size: 3.8vmin; }
+  .greeting { font-size: 3vmin; }
+  .card-value { font-size: 3.1vmin; }
+  .flipclock { --fw: 19vmin; --fh: 25vmin; --fd: 18vmin; }
+  .fcolon { font-size: 9vmin; }
+  .a-face { width: 74vmin; height: 74vmin; }
+  .a-digital { font-size: 5.4vmin; }
   .tbtn { padding: 4.4vmin 0; font-size: 7vmin; }
   .tbtn small { font-size: 2.2vmin; }
   .chip { font-size: 2.6vmin; }
@@ -677,13 +614,41 @@ body.is-locked .lockdot { display: -webkit-flex; display: flex; }
 }
 </style>
 </head>
-<body class="th-midnight is-dark face-digital nf-red">
-<div class="sky" id="sky" aria-hidden="true">
-  <div class="sky-stars" id="skyStars"></div>
-  <div class="sky-sun" id="skySun"></div>
-  <div class="sky-clouds" id="skyClouds"><div class="sky-cloud c1"></div><div class="sky-cloud c2"></div><div class="sky-cloud c3"></div></div>
+<body class="sc-sky face-digital nf-red">
+<div class="scene" id="scene" aria-hidden="true">
+  <div class="layer l-aurora"><div class="blob a1"></div><div class="blob a2"></div><div class="blob a3"></div><div class="blob a4"></div></div>
+  <div class="layer l-space">
+    <div class="neb n1"></div><div class="neb n2"></div>
+    <div class="field fd1" id="field1"></div><div class="field fd2" id="field2"></div>
+    <div class="planet"><b></b><i></i></div>
+    <div class="rocket"><svg viewBox="0 0 40 80"><path class="flame" d="M13 56 Q20 82 27 56Z" fill="#ffb347"></path><path d="M20 2C30 14 32 34 30 56H10C8 34 10 14 20 2Z" fill="#f4f6ff"></path><path d="M10 42L2 62L10 58ZM30 42L38 62L30 58Z" fill="#ff5d5d"></path><circle cx="20" cy="28" r="6" fill="#5cc8ff" stroke="#2b3a6b" stroke-width="2.5"></circle></svg></div>
+  </div>
+  <div class="layer l-stars" id="stars"></div>
+  <div class="layer l-shoot"><div class="shoot s1"></div><div class="shoot s2"></div></div>
+  <div class="layer l-orbs"><div class="orb sun" id="sun"></div><div class="orb moon" id="moon"></div></div>
+  <div class="layer l-clouds"><div class="cloud k1"></div><div class="cloud k2"></div><div class="cloud k3"></div><div class="cloud k4"></div><div class="cloud k5"></div></div>
+  <div class="layer l-birds"><div class="flock"><div class="bird"></div><div class="bird b2"></div><div class="bird b3"></div></div></div>
+  <div class="layer l-hills">
+    <svg viewBox="0 0 1000 460" preserveAspectRatio="none">
+      <path class="hf" d="M0 210C120 150 240 140 360 180S600 120 760 170S920 150 1000 160V460H0Z"></path>
+      <path class="hm" d="M0 300C150 230 300 250 430 290S700 230 840 270S960 250 1000 260V460H0Z"></path>
+      <path class="hn" d="M0 380C160 330 330 350 500 375S800 330 1000 360V460H0Z"></path>
+      <circle class="hn" cx="122" cy="328" r="22"></circle><rect class="hn" x="119" y="330" width="6" height="30"></rect>
+      <circle class="hn" cx="152" cy="338" r="15"></circle><rect class="hn" x="149.5" y="338" width="5" height="20"></rect>
+      <circle class="hn" cx="246" cy="324" r="20"></circle><rect class="hn" x="243" y="326" width="6" height="28"></rect>
+    </svg>
+    <div class="mill"><div class="mill-tower"></div><div class="mill-rotor"><i></i><i></i><i></i><i></i><b></b></div></div>
+    <div class="flies" id="flies"></div>
+  </div>
+  <div class="layer l-sea">
+    <div class="wave w1" id="w1"></div>
+    <div class="boat"><div class="boat-in"><div class="boat-sail2"></div><div class="boat-sail"></div><div class="boat-hull"></div></div></div>
+    <div class="wave w2" id="w2"></div>
+    <div class="wave w3" id="w3"></div>
+    <div class="fish f1"><i></i></div><div class="fish f2"><i></i></div>
+    <div class="bubbles" id="bubbles"></div>
+  </div>
 </div>
-<div class="ambient" id="ambient" aria-hidden="true"></div>
 <div class="wakeglow" aria-hidden="true"></div>
 
 <div class="stage" id="stage">
@@ -719,6 +684,10 @@ body.is-locked .lockdot { display: -webkit-flex; display: flex; }
     <div class="flipclock" id="flipclock" data-od-id="flip-clock" aria-hidden="true">
       <div class="fliprow" id="fliprow"></div>
       <div class="fmeta" id="fmeta"></div>
+    </div>
+    <div class="analog" id="analog" data-od-id="analog-clock" aria-hidden="true">
+      <div class="a-face" id="aFace"></div>
+      <div class="a-digital" id="aDigital"></div>
     </div>
     <div class="dateline" id="dateline" data-od-id="dateline">&mdash;</div>
     <div class="nightnote" id="nightNote" data-od-id="night-note">
@@ -832,6 +801,10 @@ body.is-locked .lockdot { display: -webkit-flex; display: flex; }
         <div class="row-ctl stat" id="statOffline">&mdash;</div>
       </div>
       <div class="row">
+        <div><div class="row-label">Full screen</div><div class="row-help">To hide Safari's bar: tap Safari's Share button, choose <strong>Add to Home Screen</strong>, then open the clock from its new icon. Settings made in Safari don't carry over, so set them once more there.</div></div>
+        <div class="row-ctl stat" id="statFull">&mdash;</div>
+      </div>
+      <div class="row">
         <div><div class="row-label">Clock running</div><div class="row-help" id="statRunHelp"></div></div>
         <div class="row-ctl stat" id="statRun">&mdash;</div>
       </div>
@@ -900,17 +873,27 @@ body.is-locked .lockdot { display: -webkit-flex; display: flex; }
     </div>
 
     <div class="sect">
-      <h3>Clock style</h3>
-      <div class="row-help" style="margin-bottom:1.6vmin;">Pick a look. Each preset changes the colors, the type and the room's ambient light together. <strong>Split-flap</strong> and <strong>Flip &mdash; Ivory</strong> turn the time into flipping tiles. Night mode replaces all of them at night.</div>
-      <div class="tgrid" id="themeGrid" data-od-id="theme-gallery">
-        <button class="tcard" type="button" data-theme="paper" data-od-id="theme-card-paper"><span class="tprev th-paper"><span class="tdot"></span>10:08</span><span class="tmeta"><span class="tname">Paper</span><span class="thint">Minimal &middot; light</span></span></button>
-        <button class="tcard" type="button" data-theme="midnight" data-od-id="theme-card-midnight"><span class="tprev th-midnight"><span class="tdot"></span>10:08</span><span class="tmeta"><span class="tname">Midnight</span><span class="thint">Calm &middot; sophisticated</span></span></button>
-        <button class="tcard" type="button" data-theme="sky" data-od-id="theme-card-sky"><span class="tprev tsky th-sky"><span class="tdot"></span>10:08</span><span class="tmeta"><span class="tname">Live sky</span><span class="thint">Follows the real sun &middot; clouds</span></span></button>
-        <button class="tcard" type="button" data-theme="splitflap" data-od-id="theme-card-splitflap"><span class="tprev tflip th-splitflap"><span class="tseg">10</span><span class="tseg">08</span></span><span class="tmeta"><span class="tname">Split-flap</span><span class="thint">Flip clock</span></span></button>
-        <button class="tcard" type="button" data-theme="ivory" data-od-id="theme-card-ivory"><span class="tprev tflip th-ivory"><span class="tseg">10</span><span class="tseg">08</span></span><span class="tmeta"><span class="tname">Flip &mdash; Ivory</span><span class="thint">Flip clock &middot; light</span></span></button>
-        <button class="tcard" type="button" data-theme="neon" data-od-id="theme-card-neon"><span class="tprev th-neon"><span class="tdot"></span>10:08</span><span class="tmeta"><span class="tname">Neon Stage</span><span class="thint">Pop &middot; bold</span></span></button>
-        <button class="tcard" type="button" data-theme="blade" data-od-id="theme-card-blade"><span class="tprev th-blade"><span class="tdot"></span>10:08</span><span class="tmeta"><span class="tname">Blade</span><span class="thint">Action &middot; ink &amp; crimson</span></span></button>
-        <button class="tcard" type="button" data-theme="arcade" data-od-id="theme-card-arcade"><span class="tprev th-arcade"><span class="tdot"></span>10:08</span><span class="tmeta"><span class="tname">Arcade</span><span class="thint">Retro &middot; phosphor</span></span></button>
+      <h3>Look</h3>
+      <div class="row-help">Pick a scene. Every scene follows the real sun through dawn, day, golden hour, dusk and a starry evening, and keeps gently moving. At bedtime the dim night face takes over.</div>
+      <div class="tgrid" id="sceneGrid" data-od-id="scene-gallery">
+        <button class="tcard" type="button" data-scene="sky" data-od-id="scene-sky"><span class="tprev pv-sky"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" aria-hidden="true"><circle cx="8" cy="8" r="3.4"></circle><path d="M8 1.8v1.4M8 12.8v1.4M1.8 8h1.4M12.8 8h1.4M3.6 3.6l1 1M11.4 11.4l1 1M3.6 12.4l1-1M11.4 4.6l1-1"></path><path d="M10.5 20.5h8a3.2 3.2 0 0 0 .2-6.4 4.6 4.6 0 0 0-8.9 1.5 2.5 2.5 0 0 0 .7 4.9z" fill="currentColor"></path></svg></span><span class="tmeta"><span class="tname">Sky</span><span class="thint">Sun, clouds, birds, stars</span></span></button>
+        <button class="tcard" type="button" data-scene="hills" data-od-id="scene-hills"><span class="tprev pv-hills"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linejoin="round" aria-hidden="true"><path d="M1.5 20l6.5-9 4.5 5.5 3.5-3.5 6.5 7z" fill="currentColor"></path><circle cx="17.5" cy="5.5" r="2.6"></circle></svg></span><span class="tmeta"><span class="tname">Hills</span><span class="thint">Windmill, fireflies at dusk</span></span></button>
+        <button class="tcard" type="button" data-scene="ocean" data-od-id="scene-ocean"><span class="tprev pv-ocean"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" aria-hidden="true"><path d="M2 9c2.5-2 4.5-2 7 0s4.5 2 7 0 4.5-2 6 0M2 14c2.5-2 4.5-2 7 0s4.5 2 7 0 4.5-2 6 0M2 19c2.5-2 4.5-2 7 0s4.5 2 7 0 4.5-2 6 0"></path></svg></span><span class="tmeta"><span class="tname">Ocean</span><span class="thint">Waves, a boat, fish</span></span></button>
+        <button class="tcard" type="button" data-scene="space" data-od-id="scene-space"><span class="tprev pv-space"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8" aria-hidden="true"><circle cx="12" cy="12" r="5" fill="currentColor"></circle><ellipse cx="12" cy="12" rx="10.5" ry="3.2" transform="rotate(-20 12 12)"></ellipse></svg></span><span class="tmeta"><span class="tname">Space</span><span class="thint">Planet, rockets, comets</span></span></button>
+        <button class="tcard" type="button" data-scene="aurora" data-od-id="scene-aurora"><span class="tprev pv-aurora"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" aria-hidden="true"><path d="M2 8c4-4 7 4 10 0s6-4 10 0M2 13c4-4 7 4 10 0s6-4 10 0M2 18c4-4 7 4 10 0s6-4 10 0"></path></svg></span><span class="tmeta"><span class="tname">Aurora</span><span class="thint">Slowly flowing colours</span></span></button>
+        <button class="tcard" type="button" data-scene="calm" data-od-id="scene-calm"><span class="tprev pv-calm"><svg viewBox="0 0 24 24" fill="none" aria-hidden="true"><path d="M20 14.5A8 8 0 1 1 9.5 4a6.5 6.5 0 0 0 10.5 10.5z" fill="currentColor"></path></svg></span><span class="tmeta"><span class="tname">Calm</span><span class="thint">Still and simple</span></span></button>
+      </div>
+      <div class="row">
+        <div><div class="row-label">Clock face</div><div class="row-help">Analog helps kids learn to tell the time. At night the clock is always digital.</div></div>
+        <div class="row-ctl"><div class="seg" id="set-face" data-od-id="set-face"><button type="button" data-v="digital">Digital</button><button type="button" data-v="flip">Flip</button><button type="button" data-v="analog">Analog</button></div></div>
+      </div>
+      <div class="row">
+        <div><div class="row-label">Minute numbers on the analog clock</div><div class="row-help">Blue 5, 10, 15&hellip; around the edge, matching the blue minute hand. The red hour hand matches the red hour numbers.</div></div>
+        <div class="row-ctl"><button class="switch" id="set-minnums" type="button" role="switch" aria-checked="false" aria-label="Minute numbers" data-od-id="set-minnums"></button></div>
+      </div>
+      <div class="row">
+        <div><div class="row-label">Moving background</div><div class="row-help" id="motionHelp">Clouds, waves, fireflies, rockets and stars keep moving. Always still at night. Turn it off if the iPad gets warm.</div></div>
+        <div class="row-ctl"><button class="switch" id="set-motion" type="button" role="switch" aria-checked="false" aria-label="Moving background" data-od-id="set-motion"></button></div>
       </div>
     </div>
 
@@ -928,10 +911,6 @@ body.is-locked .lockdot { display: -webkit-flex; display: flex; }
         <div><div class="row-label">Drift protection</div><div class="row-help">Nudges the clock a few pixels every few minutes to protect the screen.</div></div>
         <div class="row-ctl"><button class="switch" id="set-drift" type="button" role="switch" aria-checked="false" aria-label="Drift protection" data-od-id="set-drift"></button></div>
       </div>
-      <div class="row">
-        <div><div class="row-label">Moving background</div><div class="row-help">Drifting clouds and twinkling stars in Live sky, and a slow glow in the other styles. Always still at night. Turn it off if the iPad gets warm.</div></div>
-        <div class="row-ctl"><button class="switch" id="set-motion" type="button" role="switch" aria-checked="false" aria-label="Moving background" data-od-id="set-motion"></button></div>
-      </div>
     </div>
 
     <div class="sect">
@@ -945,7 +924,7 @@ body.is-locked .lockdot { display: -webkit-flex; display: flex; }
         <div class="row-ctl"><input type="date" id="set-birthday" data-od-id="set-birthday"></div>
       </div>
       <div class="row">
-        <div><div class="row-label">City</div><div class="row-help" id="locHelp">For sunrise and sunset times and the Live sky style.</div></div>
+        <div><div class="row-label">City</div><div class="row-help" id="locHelp">For sunrise and sunset times, which every scene follows.</div></div>
         <div class="row-ctl"><select id="set-city" aria-label="City" data-od-id="set-city"></select></div>
       </div>
       <div class="row">
@@ -989,6 +968,7 @@ body.is-locked .lockdot { display: -webkit-flex; display: flex; }
       <div class="row-help" style="margin-bottom:1.6vmin;">Settings close by themselves after 3 minutes without a tap, so they aren't left open overnight.</div>
       <button class="btn btn-danger" id="resetBtn" type="button" data-od-id="reset">Reset all settings</button>
     </div>
+    <div class="version" id="versionLine"></div>
   </div>
 </div>
 
@@ -1031,7 +1011,7 @@ body.is-locked .lockdot { display: -webkit-flex; display: flex; }
   var SEED = {
     defaults: {
       kidName: "", birthday: "", format12: true, showSeconds: true,
-      clockTheme: "midnight", driftProtect: true,
+      scene: "sky", face: "digital", minuteNums: true, driftProtect: true,
       bedtime: "21:00", morning: "07:00", schoolWake: "07:00", weekendWake: "08:30",
       nightMode: true, nightColor: "red", nightLevel: 40, okToWake: true,
       ringMinutes: 10, lockEnabled: false, lockAutoMin: 0,
@@ -1091,6 +1071,8 @@ body.is-locked .lockdot { display: -webkit-flex; display: flex; }
     note: "Festival dates are preloaded for 2026 and 2027. “No school” days are India's national gazetted holidays. Only those skip alarms set to “Skip school holidays”. Regional festivals (Holi, Janmashtami, Pongal…) show on the clock but don't skip alarms. If your school is closed, add the day below. Lunar and Islamic dates can move a day by region."
   };
 
+  var VERSION = "3.0 (scenes)";
+
   /* ── helpers ─────────────────────────────────────────────────────── */
   function $(id) { return document.getElementById(id); }
   function pad2(n) { return (n < 10 ? "0" : "") + n; }
@@ -1129,7 +1111,7 @@ body.is-locked .lockdot { display: -webkit-flex; display: flex; }
     var dd = SEED.defaults;
     return {
       name: dd.kidName, birthday: dd.birthday, format12: dd.format12, showSeconds: dd.showSeconds,
-      clockTheme: dd.clockTheme, driftProtect: dd.driftProtect,
+      scene: dd.scene, face: dd.face, minuteNums: dd.minuteNums, driftProtect: dd.driftProtect,
       bedtime: dd.bedtime, morning: dd.morning,
       nightMode: dd.nightMode, nightColor: dd.nightColor, nightLevel: dd.nightLevel, okToWake: dd.okToWake,
       ringMinutes: dd.ringMinutes, pauseUntil: "",
@@ -1177,12 +1159,14 @@ body.is-locked .lockdot { display: -webkit-flex; display: flex; }
     try { saved = window.localStorage.getItem(STORE_KEY); } catch (e) {}
     if (saved) {
       try { p = JSON.parse(saved); for (k in p) { if (p.hasOwnProperty(k)) base[k] = p[k]; } } catch (e) { p = null; }
-      if (p && !p.clockTheme) {
-        var legacy = { auto: "midnight", light: "paper", night: "midnight" };
-        base.clockTheme = legacy[base.theme] || "midnight";
-      }
+      // Settings saved before scenes existed: everyone moves to the new
+      // default scene, and the two old flip-clock styles keep the flip face.
+      if (p && !p.scene && (p.clockTheme === "splitflap" || p.clockTheme === "ivory")) base.face = "flip";
     }
-    if (!THEMES[base.clockTheme]) base.clockTheme = "midnight";
+    if (!SCENES[base.scene]) base.scene = dd.scene;
+    if (FACE_IDS.indexOf(base.face) < 0) base.face = dd.face;
+    base.minuteNums = base.minuteNums !== false;
+    delete base.clockTheme;
     base.alarms = normAlarms(base.alarms);
     base.customHolidays = normHolidays(base.customHolidays);
     base.name = typeof base.name === "string" ? base.name : "";
@@ -1326,28 +1310,33 @@ body.is-locked .lockdot { display: -webkit-flex; display: flex; }
     return hh + ":" + m + " " + mer;
   }
 
-  /* ── theme ───────────────────────────────────────────────────────── */
-  var THEMES = {
-    paper:     { dark: false, face: "digital" },
-    midnight:  { dark: true,  face: "digital" },
-    splitflap: { dark: true,  face: "flip"    },
-    ivory:     { dark: false, face: "flip"    },
-    sky:       { dark: false, face: "digital", sky: true },
-    neon:      { dark: true,  face: "digital" },
-    blade:     { dark: true,  face: "digital" },
-    arcade:    { dark: true,  face: "digital" }
+  /* ── scenes & clock faces ────────────────────────────────────────────
+   * A scene is a moving background world. Each has five colours (c0 top of
+   * the sky … c4 the nearest hill or wave) for night, dawn, day, golden hour
+   * and dusk; applyScene() blends between them with the real sun. */
+  var SCENES = {
+    sky:    { night: ["#0b1030","#1d2a5c"], dawn: ["#2b2f6b","#f39a6a"], day: ["#2f86da","#8ccdf3"], gold: ["#4a7fd0","#f7b86a"], dusk: ["#2a2160","#e0645c"] },
+    hills:  { night: ["#0b1030","#1d2a5c","#1f3350","#172a42","#0e1d30"], dawn: ["#2b2f6b","#f39a6a","#6a5f8f","#4c5a7a","#2f3d5a"],
+              day: ["#2f86da","#8ccdf3","#9bd49a","#5cb85c","#3a9a48"], gold: ["#4a7fd0","#f7b86a","#c2b46c","#8a9a4a","#5e7a36"], dusk: ["#2a2160","#e0645c","#6b4a7a","#4b3a66","#2c2548"] },
+    ocean:  { night: ["#0b1030","#22306a","#12305a","#0d2448","#081a36"], dawn: ["#2b2f6b","#f39a6a","#4f6aa6","#3a5590","#26407a"],
+              day: ["#2f86da","#a6dcf7","#2fa6d9","#1584c4","#0b65a8"], gold: ["#4a7fd0","#f7b86a","#3d8fbf","#2a73a8","#1b5a8e"], dusk: ["#2a2160","#e0645c","#5a4f9a","#3f3a80","#2a2a66"] },
+    space:  { night: ["#05060f","#121735","#4b2a8a","#1d5e9e","#e07a5f"], dawn: ["#0b0a1f","#2a1d4a","#7a3b8f","#2e6aa8","#f08a5d"],
+              day: ["#0a1430","#1c2f66","#3a4fb0","#19a0c9","#f2a65a"], gold: ["#120f2c","#3a2552","#8a3f7a","#2a7aa8","#f2a65a"], dusk: ["#0a0820","#24164a","#6a2f8f","#2c5aa0","#e86f6f"] },
+    aurora: { night: ["#04121c","#0a2233","#1fe0a0","#2f8cff","#b44bff"], dawn: ["#1a1030","#3b1f4d","#ff8a6b","#ffb84d","#c44bff"],
+              day: ["#0d2a4a","#13446e","#2ee6c5","#4fa8ff","#ffd25e"], gold: ["#2a1636","#4c2340","#ff9a5c","#ffcf5c","#ff5e9a"], dusk: ["#170f33","#2e1650","#ff5e9a","#7a5cff","#2fd1c5"] },
+    calm:   { night: ["#0b0f1e","#151c33"], dawn: ["#2a2342","#5a3b4f"], day: ["#1f2e52","#34507e"], gold: ["#3a2f45","#6a4a45"], dusk: ["#221a3a","#3b2547"] }
   };
-  var THEME_IDS = ["paper","midnight","sky","splitflap","ivory","neon","blade","arcade"];
-  function currentTheme() { return THEMES[state.clockTheme] || THEMES.midnight; }
+  var SCENE_IDS = ["sky","hills","ocean","space","aurora","calm"], FACE_IDS = ["digital","flip","analog"];
+  var PHASES = ["night","dawn","day","gold","dusk"];
   function applyTheme() {
-    var t = currentTheme(), b = document.body, i;
-    for (i=0;i<THEME_IDS.length;i++) b.classList.remove("th-" + THEME_IDS[i]);
+    var b = document.body, i;
+    for (i=0;i<SCENE_IDS.length;i++) b.classList.remove("sc-" + SCENE_IDS[i]);
+    for (i=0;i<FACE_IDS.length;i++) b.classList.remove("face-" + FACE_IDS[i]);
     for (i=0;i<NIGHT_COLORS.length;i++) b.classList.remove("nf-" + NIGHT_COLORS[i]);
-    b.classList.remove("face-digital","face-flip","is-dark");
-    b.classList.add("th-" + state.clockTheme, "face-" + t.face, "nf-" + state.nightColor);
-    if (t.dark) b.classList.add("is-dark");
+    b.classList.add("sc-" + state.scene, "face-" + state.face, "nf-" + state.nightColor);
     b.classList.toggle("motion", !!state.motion);
-    applySky(true);
+    b.classList.toggle("minute-nums", !!state.minuteNums);
+    applyScene(true);
   }
 
   /* ── sunrise & sunset ────────────────────────────────────────────────
@@ -1386,74 +1375,98 @@ body.is-locked .lockdot { display: -webkit-flex; display: flex; }
   function minOfDate(d) { return d.getHours() * 60 + d.getMinutes() + d.getSeconds() / 60; }
   function clockOf(d) { return formatClock(pad2(d.getHours()) + ":" + pad2(d.getMinutes())); }
 
-  /* ── live sky ────────────────────────────────────────────────────── */
-  var SKY_NAMES = ["night","dawn","rise","day","gold","dusk"], skyColors = null, starsBuilt = false, skyPlaced = false;
+  /* ── scene engine ────────────────────────────────────────────────────
+   * Builds the generated parts once (stars, waves, fireflies, bubbles), then
+   * once a minute sets the blended colours, how dark it is (--dk), and where
+   * the sun and moon are. The sun and moon glide to each new spot over a
+   * minute, so they move continuously. */
+  var sceneRgb = {}, sceneBuilt = false, orbsPlaced = false;
   function clamp01(x) { return x < 0 ? 0 : (x > 1 ? 1 : x); }
-  function hexRgb(h) {
-    h = String(h || "").replace(/[\s#]/g, "");
-    if (h.length === 3) h = h.charAt(0) + h.charAt(0) + h.charAt(1) + h.charAt(1) + h.charAt(2) + h.charAt(2);
-    var v = parseInt(h, 16);
-    return isNaN(v) ? [20, 30, 60] : [(v >> 16) & 255, (v >> 8) & 255, v & 255];
-  }
-  function readSkyColors() {
-    var cs = window.getComputedStyle(document.documentElement), out = {}, i, n;
-    for (i = 0; i < SKY_NAMES.length; i++) {
-      n = SKY_NAMES[i];
-      out[n] = [hexRgb(cs.getPropertyValue("--sky-" + n + "-top")), hexRgb(cs.getPropertyValue("--sky-" + n + "-bot"))];
-    }
-    return out;
-  }
+  function rnd(a, b) { return a + Math.random() * (b - a); }
+  function hexRgb(h) { var v = parseInt(String(h).replace("#", ""), 16); return [(v >> 16) & 255, (v >> 8) & 255, v & 255]; }
   function mixRgb(a, b, f) { return [Math.round(a[0] + (b[0] - a[0]) * f), Math.round(a[1] + (b[1] - a[1]) * f), Math.round(a[2] + (b[2] - a[2]) * f)]; }
   function rgbStr(c) { return "rgb(" + c[0] + "," + c[1] + "," + c[2] + ")"; }
-  function lum(c) { return (0.299 * c[0] + 0.587 * c[1] + 0.114 * c[2]) / 255; }
-  function skyState(now) {
-    var st = sunFor(now), R = st ? minOfDate(st.rise) : 360, S = st ? minOfDate(st.set) : 1080;
-    var m = minOfDate(now), C = skyColors || (skyColors = readSkyColors());
-    var stops = [[R - 90, "night"], [R - 35, "dawn"], [R + 5, "rise"], [R + 60, "day"], [S - 75, "day"], [S - 20, "gold"], [S + 15, "dusk"], [S + 70, "night"]];
-    var top = C.night[0], bot = C.night[1], i, a, b, f;
+  function setTransition(el, v) { el.style.webkitTransition = v; el.style.transition = v; }
+  function paletteRgb(id) {
+    if (sceneRgb[id]) return sceneRgb[id];
+    var P = SCENES[id], out = {}, i, j, list;
+    for (i = 0; i < PHASES.length; i++) {
+      list = P[PHASES[i]]; out[PHASES[i]] = [];
+      for (j = 0; j < 5; j++) out[PHASES[i]].push(hexRgb(list[Math.min(j, list.length - 1)]));
+    }
+    sceneRgb[id] = out;
+    return out;
+  }
+  function starSpans(n, topMax) {
+    var html = "", i, d;
+    for (i = 0; i < n; i++) {
+      d = rnd(0, 4).toFixed(1);
+      html += '<span class="star' + (i % 7 === 0 ? " b" : "") + (i % 4 === 0 ? " tw" : "") + '" style="left:' + rnd(0, 100).toFixed(1) +
+        '%;top:' + rnd(0, topMax).toFixed(1) + '%;-webkit-animation-delay:-' + d + 's;animation-delay:-' + d + 's"></span>';
+    }
+    return html;
+  }
+  // A wave that repeats every `period` units, so sliding it by half its
+  // 2000-unit width loops without a seam.
+  function waveSVG(amp, period) {
+    var d = "M0 " + amp + " Q" + (period / 4) + " 0 " + (period / 2) + " " + amp, x;
+    for (x = period; x <= 2000; x += period / 2) d += " T" + x + " " + amp;
+    return '<svg viewBox="0 0 2000 400" preserveAspectRatio="none"><path d="' + d + ' V400 H0 Z"></path></svg>';
+  }
+  function anim(dur, delay) { return "-webkit-animation-duration:" + dur + ";animation-duration:" + dur + ";-webkit-animation-delay:" + delay + ";animation-delay:" + delay; }
+  function buildScene() {
+    if (sceneBuilt) return;
+    sceneBuilt = true;
+    var html = "", i, sz;
+    $("stars").innerHTML = starSpans(70, 68);
+    $("field1").innerHTML = starSpans(80, 100);
+    $("field2").innerHTML = starSpans(50, 100);
+    $("w1").innerHTML = waveSVG(34, 500);
+    $("w2").innerHTML = waveSVG(26, 250);
+    $("w3").innerHTML = waveSVG(20, 200);
+    for (i = 0; i < 12; i++) {
+      html += '<span class="fly" style="left:' + rnd(4, 96).toFixed(1) + '%;bottom:' + rnd(4, 40).toFixed(1) + '%;' +
+        anim(rnd(7, 13).toFixed(1) + "s," + rnd(1.8, 3.6).toFixed(1) + "s", "-" + rnd(0, 10).toFixed(1) + "s,-" + rnd(0, 3).toFixed(1) + "s") + '"></span>';
+    }
+    $("flies").innerHTML = html;
+    html = "";
+    for (i = 0; i < 9; i++) {
+      sz = rnd(1, 2.4).toFixed(1);
+      html += '<span class="bub" style="left:' + rnd(3, 97).toFixed(1) + '%;width:' + sz + 'vmin;height:' + sz + 'vmin;' +
+        anim(rnd(6, 11).toFixed(1) + "s", "-" + rnd(0, 11).toFixed(1) + "s") + '"></span>';
+    }
+    $("bubbles").innerHTML = html;
+  }
+  function placeOrb(el, p, reset) {
+    var c = clamp01(p), x = Math.round(window.innerWidth * (0.08 + 0.84 * c)), y = Math.round(window.innerHeight * (0.74 - 0.56 * Math.sin(Math.PI * c)));
+    var tr = "translate3d(" + x + "px," + y + "px,0)";
+    if (reset || !orbsPlaced) setTransition(el, "none");
+    el.style.webkitTransform = tr; el.style.transform = tr;
+    el.style.opacity = (p > -0.03 && p < 1.03) ? "1" : "0";
+    if (reset || !orbsPlaced) { void el.offsetWidth; setTransition(el, ""); }
+  }
+  function applyScene(reset) {
+    buildScene();
+    var now = new Date(), st = sunFor(now), m = minOfDate(now);
+    var R = st ? minOfDate(st.rise) : 360, S = st ? minOfDate(st.set) : 1080;
+    var P = paletteRgb(state.scene), sc = $("scene"), cols = P.night, i, j, a, b, f;
+    var stops = [[R - 90, "night"], [R - 30, "dawn"], [R + 50, "day"], [S - 80, "day"], [S - 20, "gold"], [S + 20, "dusk"], [S + 75, "night"]];
     for (i = 0; i < stops.length - 1; i++) {
       a = stops[i]; b = stops[i + 1];
       if (m >= a[0] && m < b[0]) {
-        f = (m - a[0]) / (b[0] - a[0]);
-        top = mixRgb(C[a[1]][0], C[b[1]][0], f); bot = mixRgb(C[a[1]][1], C[b[1]][1], f);
+        f = (m - a[0]) / (b[0] - a[0]); cols = [];
+        for (j = 0; j < 5; j++) cols.push(mixRgb(P[a[1]][j], P[b[1]][j], f));
         break;
       }
     }
-    var stars = Math.max(clamp01((R - 30 - m) / 45), clamp01((m - S - 10) / 45));
-    return { top: top, bot: bot, stars: stars, clouds: 1 - stars, sunP: (m - R) / (S - R) };
-  }
-  function buildStars() {
-    if (starsBuilt) return;
-    starsBuilt = true;
-    var html = "", i, d;
-    for (i = 0; i < 46; i++) {
-      d = (Math.random() * 4).toFixed(1);
-      html += '<span class="star' + (i % 7 === 0 ? " big" : "") + (i % 4 === 0 ? " tw" : "") + '" style="left:' + (Math.random() * 100).toFixed(1) +
-        '%;top:' + (Math.random() * 62).toFixed(1) + '%;-webkit-animation-delay:-' + d + 's;animation-delay:-' + d + 's"></span>';
-    }
-    $("skyStars").innerHTML = html;
-  }
-  function setTransition(el, v) { el.style.webkitTransition = v; el.style.transition = v; }
-  function applySky(reset) {
-    var b = document.body;
-    if (!currentTheme().sky) { b.classList.remove("sky-dark"); return; }
-    buildStars();
-    var s = skyState(new Date()), sky = $("sky"), sun = $("skySun"), t = rgbStr(s.top), bo = rgbStr(s.bot), p, x, y, tr;
-    sky.style.background = "-webkit-linear-gradient(top, " + t + ", " + bo + ")";
-    sky.style.background = "linear-gradient(to bottom, " + t + ", " + bo + ")";
-    $("skyStars").style.opacity = s.stars.toFixed(2);
-    $("skyClouds").style.opacity = s.clouds.toFixed(2);
-    p = clamp01(s.sunP);
-    x = Math.round(window.innerWidth * (0.08 + 0.84 * p));
-    y = Math.round(window.innerHeight * (0.8 - 0.62 * Math.sin(Math.PI * p)));
-    tr = "translate3d(" + x + "px," + y + "px,0)";
-    if (reset || !skyPlaced) setTransition(sun, "none");
-    sun.style.webkitTransform = tr; sun.style.transform = tr;
-    sun.style.opacity = (s.sunP > -0.03 && s.sunP < 1.03) ? "1" : "0";
-    if (reset || !skyPlaced) { void sun.offsetWidth; setTransition(sun, ""); skyPlaced = true; }
-    var dark = (lum(s.top) + lum(s.bot)) / 2 < 0.5;
-    b.classList.toggle("sky-dark", dark);
-    b.classList.toggle("is-dark", dark);
+    for (j = 0; j < 5; j++) sc.style.setProperty("--c" + j, rgbStr(cols[j]));
+    var dk = Math.max(clamp01((R - 20 - m) / 50), clamp01((m - S - 5) / 50));
+    sc.style.setProperty("--dk", dk.toFixed(2));
+    sc.style.setProperty("--lt", (1 - dk).toFixed(2));
+    sc.style.setProperty("--cl", (1 - 0.7 * dk).toFixed(2));
+    placeOrb($("sun"), (m - R) / (S - R), reset);
+    placeOrb($("moon"), ((m - S) + 1440) % 1440 / (R + 1440 - S), reset);
+    orbsPlaced = true;
   }
 
   /* ── talking clock ───────────────────────────────────────────────────
@@ -1557,9 +1570,10 @@ body.is-locked .lockdot { display: -webkit-flex; display: flex; }
   /* ── clock render ────────────────────────────────────────────────── */
   var lastMinute = -1, lastDay = -1, lastFace = "";
   function renderClock(force) {
-    var now = new Date(), face = mode === "night" ? "digital" : currentTheme().face;
+    var now = new Date(), face = mode === "night" ? "digital" : state.face;
     if (face !== lastFace) { force = true; lastFace = face; }
     if (face === "flip") renderFlip(now, force);
+    else if (face === "analog") renderAnalog(now);
     else renderDigital(now);
     if (force || lastDay !== now.getDay()) {
       $("dow").textContent = DAYS[now.getDay()];
@@ -1574,10 +1588,52 @@ body.is-locked .lockdot { display: -webkit-flex; display: flex; }
     var hh = h, mer = h < 12 ? "AM" : "PM";
     if (state.format12) { hh = h % 12; if (hh === 0) hh = 12; }
     var timeStr = (state.format12 ? hh : pad2(h)) + ":" + pad2(m);
-    if ($("time").textContent !== timeStr) $("time").textContent = timeStr;
-    if (state.showSeconds) { $("seconds").style.display = "block"; $("seconds").textContent = pad2(s); }
+    if ($("time").textContent !== timeStr) $("time").innerHTML = digitsHTML(timeStr);
+    if (state.showSeconds) { $("seconds").style.display = "block"; $("seconds").innerHTML = digitsHTML(pad2(s)); }
     else { $("seconds").style.display = "none"; }
     $("meridiem").textContent = state.format12 ? mer : "";
+  }
+
+  // Each digit in its own fixed-width box, so the time never jiggles.
+  function digitsHTML(str) {
+    var out = "", i, ch;
+    for (i = 0; i < str.length; i++) { ch = str.charAt(i); out += ch === ":" ? '<span class="col">:</span>' : '<span class="dg">' + ch + '</span>'; }
+    return out;
+  }
+
+  /* ── analog face ─────────────────────────────────────────────────────
+   * A learning clock: red hour hand + red hour numbers, blue minute hand +
+   * blue minute numbers (5, 10, 15…) around the rim. */
+  var analogBuilt = false;
+  function buildAnalog() {
+    if (analogBuilt) return;
+    analogBuilt = true;
+    var svg = '<svg viewBox="0 0 200 200">', i, ang, sn, cs, r1;
+    for (i = 0; i < 60; i++) {
+      ang = i * 6 * RAD; sn = Math.sin(ang); cs = Math.cos(ang); r1 = i % 5 === 0 ? 73 : 78;
+      svg += '<line class="a-tick' + (i % 5 === 0 ? " big" : "") + '" x1="' + (100 + r1 * sn).toFixed(1) + '" y1="' + (100 - r1 * cs).toFixed(1) +
+        '" x2="' + (100 + 82 * sn).toFixed(1) + '" y2="' + (100 - 82 * cs).toFixed(1) + '"></line>';
+    }
+    for (i = 1; i <= 12; i++) {
+      ang = i * 30 * RAD;
+      svg += '<text class="a-num" x="' + (100 + 58 * Math.sin(ang)).toFixed(1) + '" y="' + (100 - 58 * Math.cos(ang) + 7).toFixed(1) + '">' + i + '</text>';
+      svg += '<text class="a-min" x="' + (100 + 90.5 * Math.sin(ang)).toFixed(1) + '" y="' + (100 - 90.5 * Math.cos(ang) + 2.7).toFixed(1) + '">' + (i === 12 ? 0 : i * 5) + '</text>';
+    }
+    svg += '<line class="a-h" id="aHour" x1="100" y1="108" x2="100" y2="58"></line>' +
+      '<line class="a-m" id="aMin" x1="100" y1="110" x2="100" y2="30"></line>' +
+      '<line class="a-s" id="aSec" x1="100" y1="116" x2="100" y2="24"></line>' +
+      '<circle class="a-hub" cx="100" cy="100" r="6.5"></circle><circle class="a-hub2" cx="100" cy="100" r="2.6"></circle></svg>';
+    $("aFace").innerHTML = svg;
+  }
+  function setRot(id, deg) { $(id).setAttribute("transform", "rotate(" + deg.toFixed(2) + " 100 100)"); }
+  function renderAnalog(now) {
+    buildAnalog();
+    var s = now.getSeconds(), m = now.getMinutes() + s / 60, h = now.getHours() % 12 + m / 60;
+    setRot("aHour", h * 30); setRot("aMin", m * 6);
+    $("aSec").style.display = state.showSeconds ? "" : "none";
+    setRot("aSec", s * 6);
+    var txt = formatClock(pad2(now.getHours()) + ":" + pad2(now.getMinutes()));
+    if ($("aDigital").textContent !== txt) $("aDigital").textContent = txt;
   }
 
   /* ── flip face ───────────────────────────────────────────────────── */
@@ -2154,18 +2210,22 @@ body.is-locked .lockdot { display: -webkit-flex; display: flex; }
       });
     })(btns[i]); }
   }
-  function renderThemeGallery() {
-    var cards = document.querySelectorAll("#themeGrid .tcard");
-    for (var i=0;i<cards.length;i++) cards[i].classList.toggle("is-on", cards[i].getAttribute("data-theme") === state.clockTheme);
+  function renderSceneGallery() {
+    var cards = document.querySelectorAll("#sceneGrid .tcard");
+    for (var i=0;i<cards.length;i++) cards[i].classList.toggle("is-on", cards[i].getAttribute("data-scene") === state.scene);
+    segSet("set-face", state.face);
+    setSwitch($("set-minnums"), state.minuteNums);
   }
-  function bindThemeGallery() {
-    var cards = document.querySelectorAll("#themeGrid .tcard");
+  function bindSceneGallery() {
+    var cards = document.querySelectorAll("#sceneGrid .tcard");
     for (var i=0;i<cards.length;i++){ (function(btn){
       btn.addEventListener("click", function(){
-        state.clockTheme = btn.getAttribute("data-theme");
-        saveState(); applyTheme(); renderClock(true); renderThemeGallery();
+        state.scene = btn.getAttribute("data-scene");
+        saveState(); applyTheme(); renderSceneGallery();
       });
     })(cards[i]); }
+    segBind("set-face", function(v){ state.face = v; saveState(); applyTheme(); renderClock(true); });
+    $("set-minnums").addEventListener("click", function(){ state.minuteNums = !state.minuteNums; setSwitch(this, state.minuteNums); saveState(); applyTheme(); });
   }
   function setStat(id, text, kind) {
     var el = $(id);
@@ -2179,6 +2239,8 @@ body.is-locked .lockdot { display: -webkit-flex; display: flex; }
     setStat("statWake", wakeState === "on" ? "On" : "Set Auto-Lock to Never", wakeState === "on" ? "ok" : "");
     setStat("statOffline", { ready: "Ready", pending: "Setting up\u2026", failed: "Couldn't set up", "needs-https": "Needs an https:// address", unsupported: "Not supported here" }[offlineState],
       offlineState === "ready" ? "ok" : (offlineState === "pending" ? "" : "bad"));
+    var sa = window.navigator.standalone;
+    setStat("statFull", sa === true ? "On" : (sa === false ? "Add to Home Screen" : "Use the browser's full screen"), sa === true ? "ok" : (sa === false ? "bad" : ""));
     if (rt.lastGap) {
       setStat("statRun", "Paused for " + humanDur(rt.lastGap.ms), "bad");
       $("statRunHelp").textContent = "Last pause began " + whenStr(new Date(rt.lastGap.at)) + ". Alarms can't ring while paused. The screen locked, Safari was closed, or the page was reloaded.";
@@ -2239,7 +2301,9 @@ body.is-locked .lockdot { display: -webkit-flex; display: flex; }
       }, { timeout: 15000, maximumAge: 86400000 });
     });
     segBind("set-relock", function(v){ state.lockAutoMin = parseInt(v,10) || 0; saveState(); });
-    bindThemeGallery();
+    bindSceneGallery();
+    if (window.matchMedia && window.matchMedia("(prefers-reduced-motion: reduce)").matches)
+      $("motionHelp").textContent += " Your iPad's Reduce Motion setting is on. The clock still moves while this switch is on.";
     $("holidayHelp").textContent = SEED.note;
     syncLockUI();
   }
@@ -2249,14 +2313,14 @@ body.is-locked .lockdot { display: -webkit-flex; display: flex; }
     if (state.location && html.indexOf('selected') < 0) html += '<option value="__here" selected>' + esc(state.location.name) + '</option>';
     $("set-city").innerHTML = html;
     st = sunFor(new Date());
-    $("locHelp").textContent = st ? ("Today: sunrise " + clockOf(st.rise) + " \u00b7 sunset " + clockOf(st.set) + ".") : "For sunrise and sunset times and the Live sky style. Without a city, Live sky assumes 6 AM to 6 PM.";
+    $("locHelp").textContent = st ? ("Today: sunrise " + clockOf(st.rise) + " \u00b7 sunset " + clockOf(st.set) + ".") : "For sunrise and sunset times, which every scene follows. Without a city, scenes assume sunrise at 6 AM and sunset at 6 PM.";
   }
-  function locationChanged() { sunCache = {}; saveState(); renderCityPicker(); renderCards(); applySky(true); }
+  function locationChanged() { sunCache = {}; saveState(); renderCityPicker(); renderCards(); applyScene(true); }
   function populateSettings() {
     $("set-name").value = state.name;
     $("set-birthday").value = state.birthday;
     segSet("set-format", state.format12 ? "12" : "24");
-    renderThemeGallery();
+    renderSceneGallery();
     setSwitch($("set-seconds"), state.showSeconds);
     setSwitch($("set-drift"), state.driftProtect);
     setSwitch($("set-night"), state.nightMode);
@@ -2442,7 +2506,7 @@ body.is-locked .lockdot { display: -webkit-flex; display: flex; }
       checkTimer(nowMs);
       if (isOpen("timerView") && !timerRunning() && nowMs - lastInteract > TIMER_IDLE_MS) closeTimer();
       if (minute !== lastMinuteTick) {
-        lastMinuteTick = minute; applyMode(); applySky(false); renderCards(); refreshHealth();
+        lastMinuteTick = minute; applyMode(); applyScene(false); renderCards(); refreshHealth();
         var d = new Date(nowMs);
         if (state.talk && !ringing && nowMinutes(d) === minutesOf(state.bedtime) && lastBedSaid !== keyOf(d)) { lastBedSaid = keyOf(d); say(bedPhrase()); }
       }
@@ -2457,7 +2521,7 @@ body.is-locked .lockdot { display: -webkit-flex; display: flex; }
       if (state.lockAutoMin === 0 && !isOpen("settingsSheet")) unlockedUntil = 0;
       return;
     }
-    requestWakeLock(); applyMode(); applySky(true); renderClock(true); renderCards();
+    requestWakeLock(); applyMode(); applyScene(true); renderClock(true); renderCards();
   }
 
   function init() {
@@ -2482,7 +2546,7 @@ body.is-locked .lockdot { display: -webkit-flex; display: flex; }
     $("stage").addEventListener("click", onStageTap);
     document.querySelector(".clockrow").addEventListener("click", onTimeTap);
     $("flipclock").addEventListener("click", onTimeTap);
-    window.addEventListener("resize", function () { applySky(true); });
+    window.addEventListener("resize", function () { applyScene(true); });
     $("settingsBtn").addEventListener("click", requestSettings);
     $("doneBtn").addEventListener("click", closeSettings);
     $("snoozeBtn").addEventListener("click", snoozeAlarm);
@@ -2506,6 +2570,7 @@ body.is-locked .lockdot { display: -webkit-flex; display: flex; }
     });
     document.addEventListener("visibilitychange", onResume);
     window.addEventListener("pageshow", onResume);
+    $("versionLine").textContent = "Room Clock \u00b7 version " + VERSION;
     startDrift(); refreshSoundPill(); requestWakeLock();
     lastTickMs = Date.now();
     tick();
