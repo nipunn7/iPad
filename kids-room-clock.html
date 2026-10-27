@@ -500,6 +500,8 @@ input[type="range"]::-webkit-slider-thumb { -webkit-appearance: none; width: 28p
 .stat { font-size: 2.1vmin; font-weight: 800; color: var(--muted); text-align: right; max-width: 30ch; }
 .stat.is-ok { color: var(--success); }
 .stat.is-bad { color: var(--danger); }
+.fsctl { display: flex; flex-direction: column; align-items: flex-end; }
+.fsctl .btn { margin-top: 1vmin; }
 
 .alarmrow { background-color: var(--surface-2); border-radius: var(--radius-md); padding: 2vmin 2.4vmin; margin-bottom: 1.6vmin; }
 .alarmrow-top { display: flex; align-items: center; justify-content: space-between; }
@@ -897,7 +899,7 @@ input[type="range"]::-webkit-slider-thumb { -webkit-appearance: none; width: 28p
       </div>
       <div class="row">
         <div><div class="row-label">Full screen</div><div class="row-help">To hide Safari's bar: tap Safari's Share button, choose <strong>Add to Home Screen</strong>, then open the clock from its new icon. Settings made in Safari don't carry over, so set them once more there.</div></div>
-        <div class="row-ctl stat" id="statFull">&mdash;</div>
+        <div class="row-ctl fsctl"><div class="stat" id="statFull">&mdash;</div><button class="btn btn-quiet" id="fsBtn" type="button" hidden>Full screen now</button></div>
       </div>
       <div class="row">
         <div><div class="row-label">Clock running</div><div class="row-help" id="statRunHelp"></div></div>
@@ -2783,6 +2785,20 @@ input[type="range"]::-webkit-slider-thumb { -webkit-appearance: none; width: 28p
     segBind("set-face", function(v){ state.face = v; saveState(); applyTheme(); renderClock(true); });
     $("set-minnums").addEventListener("click", function(){ state.minuteNums = !state.minuteNums; setSwitch(this, state.minuteNums); saveState(); applyTheme(); });
   }
+  /* Full screen without the Home Screen: some iPadOS versions let a page
+   * go full screen after a tap (Fullscreen API). iOS 12 may not; the button
+   * only appears when the browser offers the API, and Safari ends it when
+   * the page reloads. Add to Home Screen stays the permanent way. */
+  var fsFailed = false;
+  function fullscreenEl() { return document.fullscreenElement || document.webkitFullscreenElement || null; }
+  function canFullscreen() { var d = document.documentElement; return !!(d.requestFullscreen || d.webkitRequestFullscreen); }
+  function enterFullscreen() {
+    var d = document.documentElement, p;
+    try { p = d.requestFullscreen ? d.requestFullscreen() : d.webkitRequestFullscreen(); }
+    catch (e) { fsFailed = true; refreshHealth(); return; }
+    if (p && p.then) p.then(function () { refreshHealth(); }, function () { fsFailed = true; refreshHealth(); });
+    setTimeout(function () { if (!fullscreenEl()) fsFailed = true; refreshHealth(); }, 1500);
+  }
   function setStat(id, text, kind) {
     var el = $(id);
     el.textContent = text;
@@ -2795,8 +2811,10 @@ input[type="range"]::-webkit-slider-thumb { -webkit-appearance: none; width: 28p
     setStat("statWake", wakeState === "on" ? "On" : "Set Auto-Lock to Never", wakeState === "on" ? "ok" : "");
     setStat("statOffline", { ready: "Ready", pending: "Setting up\u2026", failed: "Couldn't set up", "needs-https": "Needs an https:// address", unsupported: "Not supported here" }[offlineState],
       offlineState === "ready" ? "ok" : (offlineState === "pending" ? "" : "bad"));
-    var sa = window.navigator.standalone;
-    setStat("statFull", sa === true ? "On" : (sa === false ? "Add to Home Screen" : "Use the browser's full screen"), sa === true ? "ok" : (sa === false ? "bad" : ""));
+    var sa = window.navigator.standalone, fs = !!fullscreenEl();
+    setStat("statFull", sa === true ? "On" : (fs ? "On until the page reloads" : (fsFailed ? "Not allowed here: use Add to Home Screen" : (sa === false ? "Add to Home Screen" : "Use the browser's full screen"))),
+      (sa === true || fs) ? "ok" : (sa === false || fsFailed ? "bad" : ""));
+    $("fsBtn").hidden = sa === true || fs || fsFailed || !canFullscreen();
     if (rt.lastGap) {
       setStat("statRun", "Paused for " + humanDur(rt.lastGap.ms), "bad");
       $("statRunHelp").textContent = "Last pause began " + whenStr(new Date(rt.lastGap.at)) + ". Alarms can't ring while paused. The screen locked, Safari was closed, or the page was reloaded.";
@@ -2832,6 +2850,9 @@ input[type="range"]::-webkit-slider-thumb { -webkit-appearance: none; width: 28p
     pz.addEventListener("change", function(){ state.pauseUntil = isYMD(pz.value) ? pz.value : ""; alarmsChanged(); });
     $("clearPauseBtn").addEventListener("click", function(){ state.pauseUntil = ""; pz.value = ""; alarmsChanged(); });
     $("testAlarmBtn").addEventListener("click", testAlarm);
+    $("fsBtn").addEventListener("click", enterFullscreen);
+    document.addEventListener("fullscreenchange", refreshHealth);
+    document.addEventListener("webkitfullscreenchange", refreshHealth);
     $("set-motion").addEventListener("click", function(){ state.motion = !state.motion; setSwitch(this, state.motion); saveState(); applyTheme(); });
     $("set-talk").addEventListener("click", function(){ state.talk = !state.talk; setSwitch(this, state.talk); saveState(); if (state.talk) unlockSpeech(); });
     $("talkTestBtn").addEventListener("click", function(){ unlockSpeech(); say(tapPhrase()); });

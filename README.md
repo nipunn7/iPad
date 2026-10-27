@@ -109,6 +109,13 @@ wake a sleeping iPad, so most of this setup is about never letting it sleep.
    settings made in Safari don't carry over to the Home Screen copy (set them
    once more there), and Settings → Status → *Full screen* says "On" when it
    worked.
+   Common reasons it still shows the bar: the icon was added from Chrome or
+   another browser (only Safari can do this on iOS 12), the page was opened
+   from the Files app, Drive or an email attachment instead of a web address,
+   or the clock was opened from Safari's bookmarks instead of the new icon.
+   Settings → Status also shows a **Full screen now** button, but only if this
+   iPad's Safari offers that (newer iPadOS does, iOS 12 may not); it lasts
+   until the page reloads.
 3. **Settings → Display & Brightness → Auto-Lock → Never.** This is the most
    important step. If the screen locks, nothing runs and no alarm rings.
    (The page also asks for a Wake Lock, but iPadOS only supports that from
