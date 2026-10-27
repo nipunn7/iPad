@@ -43,6 +43,17 @@ that iPad.
   night. This uses the iPad's built-in text-to-speech voices, not Siri. If
   installed, it uses an Indian English voice (Settings → General →
   Accessibility → Speech → Voices on iOS 12).
+- **Countdown timer**: the hourglass next to the gear opens big buttons
+  (1 min to 1 hour) and optional labels (Tidy up, Brush teeth, Reading,
+  Homework, Screen time). A ring empties as time runs out and turns amber for
+  the last 10%. With the timer screen closed, the hourglass shows the time
+  left. When time is up, a soft sound plays for 30 seconds (and it speaks, if
+  the talking clock is on). The timer keeps running through a reload. Kids
+  can use it without the PIN, and it's hidden at night.
+- **Works without Wi-Fi**: once opened from an `https://` address, the page
+  keeps a copy of itself on the iPad (`sw.js`, a service worker). So a reload
+  at night still opens the clock even if the Wi-Fi is down. Settings →
+  Status → *Works without Wi-Fi* shows whether it's active.
 - **Parental lock**: a 4-digit PIN in front of Settings. Settings also close by
   themselves after 3 minutes without a tap.
 
@@ -51,10 +62,15 @@ that iPad.
 The page can only ring while it's **open on screen in Safari**. A web page can't
 wake a sleeping iPad, so most of this setup is about never letting it sleep.
 
-1. **Host the file somewhere Safari can open it.** Any static web host works.
-   For example, if this repository is public you can turn on GitHub Pages
-   (repo Settings → Pages → deploy from branch) and open
+1. **Host the files at an `https://` address.** Put `kids-room-clock.html` and
+   `sw.js` **in the same folder**. Any static web host works. For example, if
+   this repository is public you can turn on GitHub Pages (repo Settings →
+   Pages → deploy from branch) and open
    `https://<your-user>.github.io/<repo>/kids-room-clock.html`.
+   Without `https://`, the clock still works but the Wi-Fi-down copy and
+   "use this iPad's location" don't. Updates: the iPad shows the saved copy
+   first and fetches the new one in the background, so a change appears on
+   the **second** reload after you publish it.
    Optional: Share → **Add to Home Screen** for a full-screen icon.
 2. **Settings → Display & Brightness → Auto-Lock → Never.** This is the most
    important step. If the screen locks, nothing runs and no alarm rings.
@@ -120,6 +136,11 @@ uses the built-in speech voices instead. What does work on that iPad:
   iOS 12, so **Auto-Lock: Never is required**. None of this was run on a real
   iOS 12 device. On an A7-era iPad (Air 1, mini 2/3), if the moving background
   stutters or the iPad gets warm, turn off Moving background.
+- **Offline copy**: tested in Chromium by stopping the web server and
+  reloading. Safari supports the same feature from iOS 11.3, but I haven't
+  run it on iOS 12. Safari can delete a site's saved data if the site isn't
+  used for weeks. A clock that runs every day shouldn't hit that, but check
+  Status if you ever see Safari's "can't open page" error.
 - **Location**: "Use this iPad's location" only works when the page is opened
   from an `https://` address (Safari's rule). Otherwise pick a city. Only
   India's main cities are listed. Times assume the iPad's clock is set to the

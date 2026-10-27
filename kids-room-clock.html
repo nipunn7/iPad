@@ -593,6 +593,46 @@ body.is-locked .lockdot { display: -webkit-flex; display: flex; }
 .key svg { width: 24px; height: 24px; display: block; }
 .lock-cancel { margin-top: 6vmin; }
 
+/* ── Countdown timer ──────────────────────────────────────────────────
+ * Opened from the hourglass next to the gear. Big preset buttons, then a
+ * ring that empties as time runs out (turns amber for the last 10%).
+ * While running, the hourglass button shows the time left. */
+.topbar-right { display: -webkit-flex; display: flex; -webkit-align-items: center; align-items: center; }
+.timerbtn { margin-right: 6px; }
+.timerbtn.is-running { width: auto; padding: 0 14px; opacity: 1; color: var(--accent); background-color: var(--surface); border-radius: var(--radius-pill); }
+.timerbtn-txt { margin-left: 6px; font-size: 17px; font-weight: 600; font-variant-numeric: tabular-nums; -webkit-font-feature-settings: "tnum" 1; font-feature-settings: "tnum" 1; }
+.timerbtn-txt:empty { display: none; }
+.timerview {
+  position: fixed; top: 0; left: 0; right: 0; bottom: 0; z-index: 85; display: none;
+  -webkit-flex-direction: column; flex-direction: column; -webkit-align-items: center; align-items: center;
+  background-color: var(--bg); color: var(--fg);
+  padding: 4vmin 4vmin calc(4vmin + env(safe-area-inset-bottom, 0px)); overflow-y: auto; -webkit-overflow-scrolling: touch;
+}
+.timerview.is-open { display: -webkit-flex; display: flex; }
+.timer-head { width: 100%; max-width: 720px; display: -webkit-flex; display: flex; -webkit-justify-content: space-between; justify-content: space-between; -webkit-align-items: center; align-items: center; margin-bottom: 3vmin; }
+.timer-head h2 { font-size: 3.6vmin; font-weight: 600; margin: 0; letter-spacing: var(--tracking-display); }
+.timer-pick { width: 100%; max-width: 720px; }
+.chips { display: -webkit-flex; display: flex; -webkit-flex-wrap: wrap; flex-wrap: wrap; -webkit-justify-content: center; justify-content: center; margin-bottom: 4vmin; }
+.chip { -webkit-appearance: none; appearance: none; cursor: pointer; border: 1px solid var(--border); background-color: var(--surface); color: var(--fg); font-size: 2.2vmin; font-weight: 600; padding: 1.2vmin 2.6vmin; min-height: 44px; border-radius: var(--radius-pill); margin: 0.6vmin; }
+.chip.is-on { background-color: var(--accent); color: var(--accent-on); border-color: var(--accent); }
+.chip:focus, .tbtn:focus { outline: none; box-shadow: var(--focus-ring); }
+.timer-grid { display: grid; grid-template-columns: repeat(3, 1fr); gap: 2.4vmin; max-width: 560px; margin: 0 auto; }
+.tbtn { -webkit-appearance: none; appearance: none; cursor: pointer; border: none; background-color: var(--surface); color: var(--fg); border-radius: var(--radius-lg); padding: 2.6vmin 0; min-height: 64px; font-size: 6vmin; font-weight: 600; font-variant-numeric: tabular-nums; line-height: 1; }
+.tbtn small { display: block; font-size: 1.9vmin; font-weight: 600; letter-spacing: 0.08em; text-transform: uppercase; color: var(--muted); margin-top: 0.8vmin; }
+.tbtn:active { background-color: var(--border); }
+.timer-run { -webkit-flex: 1 1 auto; flex: 1 1 auto; display: -webkit-flex; display: flex; -webkit-flex-direction: column; flex-direction: column; -webkit-align-items: center; align-items: center; -webkit-justify-content: center; justify-content: center; }
+.timer-ringwrap { position: relative; width: 62vmin; height: 62vmin; }
+.timer-ring { width: 100%; height: 100%; display: block; -webkit-transform: rotate(-90deg); transform: rotate(-90deg); }
+.tr-track { fill: none; stroke: var(--border); stroke-width: 10; }
+.tr-fill { fill: none; stroke: var(--accent); stroke-width: 10; stroke-linecap: round; stroke-dasharray: 339.29; -webkit-transition: stroke-dashoffset 1s linear, stroke 0.6s; transition: stroke-dashoffset 1s linear, stroke 0.6s; }
+.timer-run.is-low .tr-fill { stroke: var(--warn); }
+.timer-center { position: absolute; top: 0; left: 0; right: 0; bottom: 0; display: -webkit-flex; display: flex; -webkit-flex-direction: column; flex-direction: column; -webkit-align-items: center; align-items: center; -webkit-justify-content: center; justify-content: center; }
+.timer-left { font-size: 13vmin; font-weight: 600; letter-spacing: -0.02em; font-variant-numeric: tabular-nums; -webkit-font-feature-settings: "tnum" 1; font-feature-settings: "tnum" 1; }
+.timer-label { font-size: 3.2vmin; font-weight: 600; color: var(--muted); margin-top: 1vmin; min-height: 1.2em; }
+.timer-actions { display: -webkit-flex; display: flex; margin-top: 4vmin; }
+.timer-actions .btn { margin: 0 1.2vmin; font-size: 2.6vmin; padding: 1.6vmin 4vmin; min-height: 56px; }
+.alarm-time.is-text { font-size: 13vmin; }
+
 /* ── Flip clock face ──────────────────────────────────────────────── */
 .flipclock { --fcard-w: 21vmin; --fcard-h: 25vmin; --fdigit: 15.5vmin; display: none; -webkit-flex-direction: column; flex-direction: column; -webkit-align-items: center; align-items: center; }
 .face-flip .flipclock { display: -webkit-flex; display: flex; }
@@ -644,6 +684,11 @@ body.is-locked .lockdot { display: -webkit-flex; display: flex; }
 <div class="stage" id="stage">
   <header class="topbar">
     <div class="greeting" id="greeting" data-od-id="greeting">Good evening</div>
+    <div class="topbar-right">
+    <button class="iconbtn timerbtn" id="timerBtn" type="button" aria-label="Timer" data-od-id="timer-open">
+      <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.7" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="M6 2h12M6 22h12"></path><path d="M7 2v3.5a5 5 0 0 0 10 0V2M7 22v-3.5a5 5 0 0 1 10 0V22"></path></svg>
+      <span class="timerbtn-txt" id="timerBtnTxt"></span>
+    </button>
     <button class="iconbtn" id="settingsBtn" type="button" aria-label="Settings" data-od-id="settings-open">
       <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.7" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true">
         <circle cx="12" cy="12" r="3.2"></circle>
@@ -653,6 +698,7 @@ body.is-locked .lockdot { display: -webkit-flex; display: flex; }
         <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.7" stroke-linecap="round" stroke-linejoin="round"><rect x="5" y="11" width="14" height="9" rx="2"></rect><path d="M8 11V8a4 4 0 0 1 8 0v3"></path></svg>
       </span>
     </button>
+    </div>
   </header>
 
   <main class="core" id="driftTarget">
@@ -710,6 +756,44 @@ body.is-locked .lockdot { display: -webkit-flex; display: flex; }
 
 <div class="soundpill" id="soundPill" hidden>Tap anywhere to turn on alarm sound</div>
 
+<div class="timerview" id="timerView" role="dialog" aria-modal="true" aria-label="Timer">
+  <div class="timer-head">
+    <h2>Timer</h2>
+    <button class="btn btn-quiet" id="timerHide" type="button">Back to clock</button>
+  </div>
+  <div class="timer-pick" id="timerPick">
+    <div class="chips" id="timerLabels">
+      <button class="chip is-on" type="button" data-v="">No label</button>
+      <button class="chip" type="button" data-v="Tidy up">Tidy up</button>
+      <button class="chip" type="button" data-v="Brush teeth">Brush teeth</button>
+      <button class="chip" type="button" data-v="Reading">Reading</button>
+      <button class="chip" type="button" data-v="Homework">Homework</button>
+      <button class="chip" type="button" data-v="Screen time">Screen time</button>
+    </div>
+    <div class="timer-grid" id="timerGrid">
+      <button class="tbtn" type="button" data-min="1">1<small>min</small></button>
+      <button class="tbtn" type="button" data-min="2">2<small>min</small></button>
+      <button class="tbtn" type="button" data-min="5">5<small>min</small></button>
+      <button class="tbtn" type="button" data-min="10">10<small>min</small></button>
+      <button class="tbtn" type="button" data-min="15">15<small>min</small></button>
+      <button class="tbtn" type="button" data-min="20">20<small>min</small></button>
+      <button class="tbtn" type="button" data-min="30">30<small>min</small></button>
+      <button class="tbtn" type="button" data-min="45">45<small>min</small></button>
+      <button class="tbtn" type="button" data-min="60">1<small>hour</small></button>
+    </div>
+  </div>
+  <div class="timer-run" id="timerRun" hidden>
+    <div class="timer-ringwrap">
+      <svg class="timer-ring" viewBox="0 0 120 120" aria-hidden="true"><circle class="tr-track" cx="60" cy="60" r="54"></circle><circle class="tr-fill" id="timerFill" cx="60" cy="60" r="54"></circle></svg>
+      <div class="timer-center"><div class="timer-left" id="timerLeft">0:00</div><div class="timer-label" id="timerLabel"></div></div>
+    </div>
+    <div class="timer-actions">
+      <button class="btn btn-quiet" id="timerAdd" type="button">+1 min</button>
+      <button class="btn btn-danger" id="timerStop" type="button">Stop</button>
+    </div>
+  </div>
+</div>
+
 <div class="alarm" id="alarmOverlay" role="dialog" aria-modal="true" aria-label="Alarm">
   <div class="alarm-kicker" id="alarmKicker">Wake up</div>
   <div class="alarm-time" id="alarmTime">--:--</div>
@@ -737,6 +821,10 @@ body.is-locked .lockdot { display: -webkit-flex; display: flex; }
       <div class="row">
         <div><div class="row-label">Screen stays on</div><div class="row-help">Alarms can only ring while this page is open and the screen is on. Set the iPad's Auto-Lock to Never.</div></div>
         <div class="row-ctl stat" id="statWake">&mdash;</div>
+      </div>
+      <div class="row">
+        <div><div class="row-label">Works without Wi-Fi</div><div class="row-help">Keeps a copy of the clock on this iPad, so it still opens after a reload when the Wi-Fi is down. Needs the page to be opened from an https:// address.</div></div>
+        <div class="row-ctl stat" id="statOffline">&mdash;</div>
       </div>
       <div class="row">
         <div><div class="row-label">Clock running</div><div class="row-help" id="statRunHelp"></div></div>
@@ -1123,7 +1211,7 @@ body.is-locked .lockdot { display: -webkit-flex; display: flex; }
    * alarms already rang, and when the clock last ticked (to catch up on
    * alarms missed while the page was paused, and to report pauses). */
   var RT_KEY = STORE_KEY + ".rt";
-  var rt = { snoozeUntil: 0, snoozeLabel: "", snoozeSound: "chimes", fired: {}, lastTick: 0, lastGap: null };
+  var rt = { snoozeUntil: 0, snoozeLabel: "", snoozeSound: "chimes", fired: {}, lastTick: 0, lastGap: null, timerEnd: 0, timerTotal: 0, timerLabel: "" };
   function loadRuntime() {
     try {
       var raw = window.localStorage.getItem(RT_KEY), p = raw ? JSON.parse(raw) : null;
@@ -1134,6 +1222,9 @@ body.is-locked .lockdot { display: -webkit-flex; display: flex; }
         rt.fired = (p.fired && typeof p.fired === "object") ? p.fired : {};
         rt.lastTick = +p.lastTick || 0;
         rt.lastGap = (p.lastGap && +p.lastGap.at && +p.lastGap.ms) ? { at: +p.lastGap.at, ms: +p.lastGap.ms } : null;
+        rt.timerEnd = +p.timerEnd || 0;
+        rt.timerTotal = +p.timerTotal || 0;
+        rt.timerLabel = typeof p.timerLabel === "string" ? p.timerLabel : "";
       }
     } catch (e) {}
   }
@@ -1812,15 +1903,16 @@ body.is-locked .lockdot { display: -webkit-flex; display: flex; }
     stopSound();
     ringing = al; ringStartMs = Date.now();
     if (!$("alarmOverlay").classList.contains("is-open")) alarmLastFocus = document.activeElement;
-    $("alarmKicker").textContent = al.test ? "Test alarm" : (al.snooze ? "Snooze is over" : "Wake up");
-    $("alarmTime").textContent = formatClock(al.time);
+    $("alarmKicker").textContent = al.timer ? "Timer" : (al.test ? "Test alarm" : (al.snooze ? "Snooze is over" : "Wake up"));
+    $("alarmTime").textContent = al.timer ? "Time's up!" : formatClock(al.time);
+    $("alarmTime").classList.toggle("is-text", !!al.timer);
     $("alarmLabel").textContent = al.label || "Alarm";
     $("alarmNote").textContent = al.test ? "Press the iPad's volume buttons now to set how loud alarms will be." : "";
-    $("snoozeBtn").hidden = !!al.test;
-    $("dismissBtn").textContent = al.test ? "Stop" : "I'm awake";
+    $("snoozeBtn").hidden = !!(al.test || al.timer);
+    $("dismissBtn").textContent = al.timer ? "OK" : (al.test ? "Stop" : "I'm awake");
     $("alarmOverlay").classList.add("is-open");
-    startSound(al.sound === "silent" ? "chimes" : al.sound, al.test ? LEVELS.length - 1 : 0);
-    if (state.talk) say(alarmPhrase());
+    startSound(al.sound === "silent" ? "chimes" : al.sound, al.test ? LEVELS.length - 1 : (al.timer ? 1 : 0));
+    if (state.talk) say(al.timer ? "Time's up!" + (al.label && al.label !== "Timer" ? " " + al.label + "." : "") : alarmPhrase());
     var d = $("dismissBtn"); if (d && d.focus) { try { d.focus(); } catch (e) {} }
   }
   function stopAlarm() {
@@ -1841,13 +1933,90 @@ body.is-locked .lockdot { display: -webkit-flex; display: flex; }
   }
   function checkAutoStop(nowMs) {
     if (!ringing) return;
-    var limit = ringing.test ? TEST_MS : state.ringMinutes * 60000;
+    var limit = ringing.timer ? TIMER_RING_MS : (ringing.test ? TEST_MS : state.ringMinutes * 60000);
     if (nowMs - ringStartMs >= limit) stopAlarm();
   }
   function testAlarm() {
     var snd = "chimes", i, now = new Date();
     for (i=0;i<state.alarms.length;i++) if (state.alarms[i].on && state.alarms[i].sound !== "silent") { snd = state.alarms[i].sound; break; }
     fireAlarm({ time: pad2(now.getHours()) + ":" + pad2(now.getMinutes()), label: SOUND_NAMES[snd], sound: snd, test: true });
+  }
+
+  /* ── countdown timer ─────────────────────────────────────────────────
+   * The end time lives in the runtime store, so a reload keeps the timer
+   * going; if the page was away when it ended, it still rings if that was
+   * under 5 minutes ago. */
+  var TIMER_RING_MS = 30000, TIMER_CATCHUP_MS = 5 * 60000, TIMER_IDLE_MS = 2 * 60000, RING_LEN = 339.29;
+  var timerLabelPick = "";
+  function timerRunning() { return rt.timerEnd > 0; }
+  function fmtLeft(ms) {
+    var t = Math.max(0, Math.ceil(ms / 1000)), h = Math.floor(t / 3600), m = Math.floor((t % 3600) / 60), sec = t % 60;
+    return (h ? h + ":" + pad2(m) : String(m)) + ":" + pad2(sec);
+  }
+  function renderTimer(force) {
+    var running = timerRunning(), left = running ? rt.timerEnd - Date.now() : 0, fill = $("timerFill"), frac;
+    $("timerBtn").classList.toggle("is-running", running);
+    $("timerBtnTxt").textContent = running ? fmtLeft(left) : "";
+    $("timerPick").hidden = running;
+    $("timerRun").hidden = !running;
+    if (!running) return;
+    frac = rt.timerTotal > 0 ? clamp01(left / rt.timerTotal) : 0;
+    if (force) setTransition(fill, "none");
+    fill.style.strokeDashoffset = (RING_LEN * (1 - frac)).toFixed(2);
+    if (force) { void fill.getBoundingClientRect(); setTransition(fill, ""); }
+    $("timerLeft").textContent = fmtLeft(left);
+    $("timerLabel").textContent = rt.timerLabel;
+    $("timerRun").classList.toggle("is-low", frac <= 0.1);
+  }
+  function startTimer(min) {
+    rt.timerTotal = min * 60000; rt.timerEnd = Date.now() + rt.timerTotal; rt.timerLabel = timerLabelPick;
+    saveRuntime(); renderTimer(true);
+    if (state.talk) say("Timer set for " + (min === 60 ? "1 hour" : min + (min === 1 ? " minute" : " minutes")) + ".");
+  }
+  function addTimerMinute() {
+    if (!timerRunning()) return;
+    rt.timerEnd += 60000; rt.timerTotal += 60000; saveRuntime(); renderTimer(false);
+  }
+  function stopTimer() { rt.timerEnd = 0; rt.timerTotal = 0; rt.timerLabel = ""; saveRuntime(); renderTimer(true); }
+  function timerDone(late) {
+    var label = rt.timerLabel, n = new Date();
+    stopTimer(); closeTimer();
+    if (late || ringing) return;
+    fireAlarm({ timer: true, time: pad2(n.getHours()) + ":" + pad2(n.getMinutes()), label: label ? label + " is over" : "Timer", sound: "marimba" });
+  }
+  function checkTimer(nowMs) {
+    if (timerRunning() && nowMs >= rt.timerEnd) timerDone(nowMs - rt.timerEnd > TIMER_CATCHUP_MS);
+    else if (timerRunning() || isOpen("timerView")) renderTimer(false);
+  }
+  function openTimer() {
+    lastInteract = Date.now();
+    renderTimer(true);
+    $("timerView").classList.add("is-open");
+  }
+  function closeTimer() { $("timerView").classList.remove("is-open"); }
+  function bindTimer() {
+    var i, grid = $("timerGrid").querySelectorAll(".tbtn"), chips = $("timerLabels").querySelectorAll(".chip");
+    for (i = 0; i < grid.length; i++) { (function (b) { b.addEventListener("click", function () { startTimer(parseInt(b.getAttribute("data-min"), 10)); }); })(grid[i]); }
+    for (i = 0; i < chips.length; i++) { (function (b) { b.addEventListener("click", function () {
+      timerLabelPick = b.getAttribute("data-v");
+      for (var j = 0; j < chips.length; j++) chips[j].classList.toggle("is-on", chips[j] === b);
+    }); })(chips[i]); }
+    $("timerBtn").addEventListener("click", openTimer);
+    $("timerHide").addEventListener("click", closeTimer);
+    $("timerAdd").addEventListener("click", addTimerMinute);
+    $("timerStop").addEventListener("click", stopTimer);
+  }
+
+  /* ── works without Wi-Fi (service worker, iOS 11.3+, https only) ─── */
+  var offlineState = "unsupported";
+  function registerOffline() {
+    if (!("serviceWorker" in navigator)) return;
+    if (location.protocol !== "https:" && location.hostname !== "localhost" && location.hostname !== "127.0.0.1") { offlineState = "needs-https"; return; }
+    offlineState = "pending";
+    try {
+      navigator.serviceWorker.register("sw.js").then(function () { offlineState = "ready"; refreshHealth(); },
+        function () { offlineState = "failed"; refreshHealth(); });
+    } catch (e) { offlineState = "failed"; }
   }
 
   /* ── drift protection ────────────────────────────────────────────── */
@@ -1891,6 +2060,7 @@ body.is-locked .lockdot { display: -webkit-flex; display: flex; }
     if (isOpen("alarmOverlay")) return $("alarmOverlay");
     if (isOpen("lockScreen")) return $("lockScreen");
     if (isOpen("settingsSheet")) return $("settingsSheet");
+    if (isOpen("timerView")) return $("timerView");
     return null;
   }
   function trapTab(e) {
@@ -2002,6 +2172,8 @@ body.is-locked .lockdot { display: -webkit-flex; display: flex; }
     if (!isOpen("settingsSheet")) return;
     setStat("statSound", audioUnlocked ? "Ready" : "Tap the clock once", audioUnlocked ? "ok" : "bad");
     setStat("statWake", wakeState === "on" ? "On" : "Set Auto-Lock to Never", wakeState === "on" ? "ok" : "");
+    setStat("statOffline", { ready: "Ready", pending: "Setting up\u2026", failed: "Couldn't set up", "needs-https": "Needs an https:// address", unsupported: "Not supported here" }[offlineState],
+      offlineState === "ready" ? "ok" : (offlineState === "pending" ? "" : "bad"));
     if (rt.lastGap) {
       setStat("statRun", "Paused for " + humanDur(rt.lastGap.ms), "bad");
       $("statRunHelp").textContent = "Last pause began " + whenStr(new Date(rt.lastGap.at)) + ". Alarms can't ring while paused. The screen locked, Safari was closed, or the page was reloaded.";
@@ -2227,7 +2399,8 @@ body.is-locked .lockdot { display: -webkit-flex; display: flex; }
       else if (e.key === "Escape") { cancelLockFlow(); e.preventDefault(); }
       return;
     }
-    if (e.key === "Escape" && isOpen("settingsSheet")) { closeSettings(); e.preventDefault(); }
+    if (e.key === "Escape" && isOpen("settingsSheet")) { closeSettings(); e.preventDefault(); return; }
+    if (e.key === "Escape" && isOpen("timerView")) { closeTimer(); e.preventDefault(); }
   }
   function bindLock() {
     $("keypad").addEventListener("click", function (e) {
@@ -2261,6 +2434,8 @@ body.is-locked .lockdot { display: -webkit-flex; display: flex; }
       renderClock(false);
       checkAlarms(nowMs);
       checkAutoStop(nowMs);
+      checkTimer(nowMs);
+      if (isOpen("timerView") && !timerRunning() && nowMs - lastInteract > TIMER_IDLE_MS) closeTimer();
       if (minute !== lastMinuteTick) {
         lastMinuteTick = minute; applyMode(); applySky(false); renderCards(); refreshHealth();
         var d = new Date(nowMs);
@@ -2288,7 +2463,8 @@ body.is-locked .lockdot { display: -webkit-flex; display: flex; }
     lastCheckMs = (rt.lastTick && nowMs - rt.lastTick < CATCHUP_MS) ? rt.lastTick : nowMs - 1500;
     rt.lastTick = nowMs; pruneFired(); saveRuntime();
 
-    applyTheme(); applyMode(); renderClock(true); renderCards(); bindSettings(); bindLock();
+    applyTheme(); applyMode(); renderClock(true); renderCards(); bindSettings(); bindLock(); bindTimer(); renderTimer(true);
+    registerOffline();
     document.addEventListener("keydown", onKey);
     document.addEventListener("touchend", unlockAudio, true);
     document.addEventListener("click", unlockAudio, true);
