@@ -26,6 +26,23 @@ that iPad.
   snooze survives a reload. Settings → Status shows whether alarm sound is
   ready, whether the screen is being kept awake, and when the clock last
   stopped running.
+- **Live sky** style: the background follows the real sun for your city. It
+  goes from night to dawn, day, golden hour and dusk, with the sun moving
+  across the screen, slowly drifting clouds, and stars in the evening. A
+  sunrise/sunset card shows on any style once a city is chosen. Sun times are
+  computed on the iPad (no internet). In testing they were within about a
+  minute of a reference astronomy library for Delhi, Mumbai, Chennai and
+  Srinagar in summer, autumn and winter.
+- **Moving background** (on by default): drifting clouds and twinkling stars
+  in Live sky, and a slow glow in the other styles. It is always still at
+  night, and you can turn it off if the iPad runs warm.
+- **Talking clock** (off by default): tap the time to hear it, for example
+  *"It's 7:38 in the evening. Today is Tuesday, 27 October."* At night it says
+  *"It's still night time. Stay in bed until 7 o'clock."* Alarms start with
+  *"Good morning, Aarav! … It's a school day."*, and at bedtime it says good
+  night. This uses the iPad's built-in text-to-speech voices, not Siri. If
+  installed, it uses an Indian English voice (Settings → General →
+  Accessibility → Speech → Voices on iOS 12).
 - **Parental lock**: a 4-digit PIN in front of Settings. Settings also close by
   themselves after 3 minutes without a tap.
 
@@ -61,6 +78,31 @@ wake a sleeping iPad, so most of this setup is about never letting it sleep.
 8. **Turn on Do Not Disturb / a Sleep Focus** so notifications don't light up
    the screen at night.
 
+## Siri (iOS 12)
+
+**A web page can't add Siri commands**, on iOS 12 or on today's iPadOS. Siri
+can't read or control what's on a Safari page. That's why the talking clock
+uses the built-in speech voices instead. What does work on that iPad:
+
+- **Native alarms as a backup**: *"Hey Siri, set an alarm for 7 AM."* These are
+  the Clock app's alarms. They ring even if this page has stopped or the screen
+  locked, which this page can't do. They are worth having on exam days, or if
+  Settings → Status ever shows a pause. Either alarm can be switched off on
+  the iPad as normal.
+- **Timers**: *"Hey Siri, set a timer for 15 minutes"* for tidy-up or reading
+  time.
+- **Reopening the clock by voice**: the free **Shortcuts** app (made for
+  iOS 12) can run an "Open URLs" shortcut with the clock's address, given a
+  phrase like *"Room clock"*. After it reopens, tap the clock once so alarm
+  sound and speech work again.
+- On iPads stuck on iOS 12 (iPad Air 1st gen, iPad mini 2 and 3), *"Hey Siri"*
+  only listens while the iPad is charging. That's fine for a bedside clock on
+  its charger.
+- **Guided Access probably blocks Siri.** As far as I know, Siri can't be
+  started while Guided Access is on, so you trade kid-proofing for voice
+  control. I couldn't check this on a device. Also test whether Clock-app
+  alarms still ring during Guided Access on your iPad.
+
 ## Honest limits
 
 - **Not tested on a real iPad.** I tested it in Chromium with a simulated
@@ -69,10 +111,19 @@ wake a sleeping iPad, so most of this setup is about never letting it sleep.
   fallback. I couldn't test Safari's audio rules or the silent switch.
   Alarms play through an `<audio>` element, which on iOS normally ignores the
   ring/silent switch (Web Audio doesn't, so it's only the fallback). Check this
-  on your iPad with **Test**, with the silent switch on.
-- **Older iPads**: the script is written in ES5 (no `let`, arrow functions and
-  so on) so older Safari can run it, but some layouts use CSS Grid, which
-  needs iOS 10.3 or newer. Not verified on old iOS versions.
+  on your iPad with **Test**, with the silent switch on. Also try **Speak**
+  under Talking clock with the switch on, because I don't know whether iOS 12
+  mutes speech with the switch.
+- **iOS 12 / older iPads**: the script is written in ES5 (no `let`, arrow
+  functions and so on), and everything it uses exists in iOS 12 Safari (CSS
+  Grid needs 10.3+, safe-area insets 11.2+). Wake Lock does not exist on
+  iOS 12, so **Auto-Lock: Never is required**. None of this was run on a real
+  iOS 12 device. On an A7-era iPad (Air 1, mini 2/3), if the moving background
+  stutters or the iPad gets warm, turn off Moving background.
+- **Location**: "Use this iPad's location" only works when the page is opened
+  from an `https://` address (Safari's rule). Otherwise pick a city. Only
+  India's main cities are listed. Times assume the iPad's clock is set to the
+  local time zone.
 - **Holidays**: dated festivals are preloaded for 2026 and 2027 only. After
   that, only fixed-date ones (Republic Day, Independence Day, Gandhi Jayanti,
   Christmas…) remain, so add new dates under Settings → Holidays. Only the 14

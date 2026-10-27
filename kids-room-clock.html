@@ -157,6 +157,20 @@
   --wake-green-ink: #04210e;
   --wake-glow:      rgba(52,199,89,0.24);
   --pill-wash:      rgba(127,127,127,0.18);
+
+  /* Live sky — gradient stops through the day (read by JS), sun, clouds,
+   * stars, and the ink used on the light (day) and dark (dawn/dusk) sky. */
+  --sky-night-top:#0b1026; --sky-night-bot:#1c2752;
+  --sky-dawn-top:#2e2a5e;  --sky-dawn-bot:#f0905f;
+  --sky-rise-top:#6aa6dc;  --sky-rise-bot:#ffc993;
+  --sky-day-top:#3b8ed6;   --sky-day-bot:#c4e6f8;
+  --sky-gold-top:#5d8fc6;  --sky-gold-bot:#f7c47c;
+  --sky-dusk-top:#2a2654;  --sky-dusk-bot:#e2725b;
+  --sky-sun:#fff6cf; --sky-sun-glow:rgba(255,224,140,0.45); --sky-cloud:#ffffff; --sky-star:#ffffff;
+  --th-sky-fg:#0e2440;  --th-sky-muted:#2f4c6b;  --th-sky-surface:rgba(255,255,255,0.42);  --th-sky-border:rgba(255,255,255,0.65);
+  --th-sky-accent:#0b63c4;  --th-sky-accent-on:#ffffff;
+  --th-skyd-fg:#f4f6ff; --th-skyd-muted:#c0c8ea; --th-skyd-surface:rgba(255,255,255,0.10); --th-skyd-border:rgba(255,255,255,0.20);
+  --th-skyd-accent:#ffd27a; --th-skyd-accent-on:#1a1530;
 }
 
 /* ── Clock themes ─────────────────────────────────────────────────────
@@ -170,6 +184,8 @@
 .th-neon { --bg:var(--th-neon-bg); --surface:var(--th-neon-surface); --fg:var(--th-neon-fg); --muted:var(--th-neon-muted); --border:var(--th-neon-border); --accent:var(--th-neon-accent); --accent-on:var(--th-neon-accent-on); --accent-hover:var(--th-neon-accent-lift); --accent-active:var(--th-neon-accent); }
 .th-blade { --bg:var(--th-blade-bg); --surface:var(--th-blade-surface); --fg:var(--th-blade-fg); --muted:var(--th-blade-muted); --border:var(--th-blade-border); --accent:var(--th-blade-accent); --accent-on:var(--th-blade-accent-on); --accent-hover:var(--th-blade-accent-lift); --accent-active:var(--th-blade-accent); }
 .th-arcade { --bg:var(--th-arcade-bg); --surface:var(--th-arcade-surface); --fg:var(--th-arcade-fg); --muted:var(--th-arcade-muted); --border:var(--th-arcade-border); --accent:var(--th-arcade-accent); --accent-on:var(--th-arcade-accent-on); --accent-hover:var(--th-arcade-accent-lift); --accent-active:var(--th-arcade-accent); }
+.th-sky { --bg:var(--sky-day-bot); --surface:var(--th-sky-surface); --fg:var(--th-sky-fg); --muted:var(--th-sky-muted); --border:var(--th-sky-border); --accent:var(--th-sky-accent); --accent-on:var(--th-sky-accent-on); --accent-hover:var(--th-sky-accent); --accent-active:var(--th-sky-accent); }
+.th-sky.sky-dark { --bg:var(--sky-night-top); --surface:var(--th-skyd-surface); --fg:var(--th-skyd-fg); --muted:var(--th-skyd-muted); --border:var(--th-skyd-border); --accent:var(--th-skyd-accent); --accent-on:var(--th-skyd-accent-on); --accent-hover:var(--th-skyd-accent); --accent-active:var(--th-skyd-accent); }
 .th-ivory { --bg:var(--th-ivory-bg); --surface:var(--th-ivory-surface); --fg:var(--th-ivory-fg); --muted:var(--th-ivory-muted); --border:var(--th-ivory-border); --accent:var(--th-ivory-accent); --accent-on:var(--th-ivory-accent-on); --accent-hover:var(--th-ivory-accent-lift); --accent-active:var(--th-ivory-accent); }
 
 /* Ambient field: a fixed, non-interactive wash behind everything. Kept
@@ -306,6 +322,51 @@ button, input, select { font-family: inherit; color: inherit; }
 .is-dark .card--quiet { display: none; }
 .is-dark .card-ico, .is-dark .card-kicker, .is-dark .card-sub { opacity: 0.85; }
 .is-dark .cards { -webkit-flex-direction: column; flex-direction: column; -webkit-align-items: center; align-items: center; }
+
+/* ── Live sky (the "Sky" preset) ──────────────────────────────────────
+ * A fixed layer behind the clock whose gradient follows the real sun:
+ * night → dawn → day → golden hour → dusk, from sunrise/sunset computed
+ * for the chosen city. JS sets the gradient, the sun's position and the
+ * star/cloud opacity once a minute; only clouds and some stars animate,
+ * and only with transform/opacity so an old iPad can keep up. */
+.sky { position: fixed; top: 0; left: 0; right: 0; bottom: 0; display: none; overflow: hidden; pointer-events: none; background-color: var(--bg); }
+.th-sky .sky { display: block; }
+.is-night .sky { display: none; }
+.sky-stars, .sky-clouds { position: absolute; top: 0; left: 0; right: 0; bottom: 0; opacity: 0; -webkit-transition: opacity 4s linear; transition: opacity 4s linear; }
+.star { position: absolute; width: 2px; height: 2px; border-radius: 50%; background-color: var(--sky-star); }
+.star.big { width: 3px; height: 3px; }
+.sky-sun {
+  position: absolute; left: 0; top: 0; width: 16vmin; height: 16vmin; margin: -8vmin 0 0 -8vmin; border-radius: 50%; opacity: 0;
+  background: -webkit-radial-gradient(circle, var(--sky-sun) 0, var(--sky-sun) 28%, var(--sky-sun-glow) 40%, var(--glow-fade) 70%);
+  background: radial-gradient(circle, var(--sky-sun) 0, var(--sky-sun) 28%, var(--sky-sun-glow) 40%, var(--glow-fade) 70%);
+  -webkit-transition: -webkit-transform 60s linear, opacity 3s linear; transition: transform 60s linear, opacity 3s linear;
+}
+.sky-cloud { position: absolute; left: 0; height: 8vmin; border-radius: 8vmin; background-color: var(--sky-cloud); opacity: 0.45; }
+.sky-cloud::before, .sky-cloud::after { content: ""; position: absolute; border-radius: 50%; background-color: var(--sky-cloud); }
+.sky-cloud::before { width: 45%; height: 150%; left: 15%; top: -70%; }
+.sky-cloud::after { width: 35%; height: 115%; left: 48%; top: -45%; }
+.sky-cloud.c1 { top: 14%; width: 30vmin; -webkit-transform: translate3d(12vw,0,0); transform: translate3d(12vw,0,0); }
+.sky-cloud.c2 { top: 21%; width: 20vmin; opacity: 0.32; -webkit-transform: translate3d(62vw,0,0); transform: translate3d(62vw,0,0); }
+.sky-cloud.c3 { top: 9%; width: 24vmin; opacity: 0.38; -webkit-transform: translate3d(80vw,0,0); transform: translate3d(80vw,0,0); }
+.tprev.tsky { background: -webkit-linear-gradient(top, var(--sky-day-top), var(--sky-gold-bot)); background: linear-gradient(to bottom, var(--sky-day-top), var(--sky-gold-bot)); }
+
+/* Moving background: drifting clouds, twinkling stars, and a slow
+ * "breathing" of the other presets' glow. Never at night. */
+@-webkit-keyframes drift { from { -webkit-transform: translate3d(-40vmin,0,0); } to { -webkit-transform: translate3d(105vw,0,0); } }
+@keyframes drift { from { transform: translate3d(-40vmin,0,0); } to { transform: translate3d(105vw,0,0); } }
+@-webkit-keyframes twinkle { from { opacity: 1; } to { opacity: 0.2; } }
+@keyframes twinkle { from { opacity: 1; } to { opacity: 0.2; } }
+@-webkit-keyframes breathe { from { -webkit-transform: scale(1); } to { -webkit-transform: scale(1.12) translate3d(0,-2%,0); } }
+@keyframes breathe { from { transform: scale(1); } to { transform: scale(1.12) translate3d(0,-2%,0); } }
+.motion .sky-cloud.c1 { -webkit-animation: drift 170s linear -40s infinite; animation: drift 170s linear -40s infinite; }
+.motion .sky-cloud.c2 { -webkit-animation: drift 240s linear -150s infinite; animation: drift 240s linear -150s infinite; }
+.motion .sky-cloud.c3 { -webkit-animation: drift 200s linear -95s infinite; animation: drift 200s linear -95s infinite; }
+.motion .star.tw { -webkit-animation: twinkle 3.5s ease-in-out infinite alternate; animation: twinkle 3.5s ease-in-out infinite alternate; }
+.motion .ambient { -webkit-animation: breathe 28s ease-in-out infinite alternate; animation: breathe 28s ease-in-out infinite alternate; }
+.is-night .ambient { -webkit-animation: none; animation: none; }
+@media (prefers-reduced-motion: reduce) {
+  .motion .sky-cloud, .motion .star.tw, .motion .ambient { -webkit-animation: none !important; animation: none !important; }
+}
 
 /* ── Night face ───────────────────────────────────────────────────────
  * From bedtime until the morning wake time the clock drops to dim red /
@@ -572,6 +633,11 @@ body.is-locked .lockdot { display: -webkit-flex; display: flex; }
 </style>
 </head>
 <body class="th-midnight is-dark face-digital nf-red">
+<div class="sky" id="sky" aria-hidden="true">
+  <div class="sky-stars" id="skyStars"></div>
+  <div class="sky-sun" id="skySun"></div>
+  <div class="sky-clouds" id="skyClouds"><div class="sky-cloud c1"></div><div class="sky-cloud c2"></div><div class="sky-cloud c3"></div></div>
+</div>
 <div class="ambient" id="ambient" aria-hidden="true"></div>
 <div class="wakeglow" aria-hidden="true"></div>
 
@@ -622,6 +688,10 @@ body.is-locked .lockdot { display: -webkit-flex; display: flex; }
     <div class="card card--quiet" id="cardSchool" data-od-id="school-card">
       <span class="card-ico" aria-hidden="true"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.7" stroke-linecap="round" stroke-linejoin="round"><path d="M22 10 12 5 2 10l10 5 10-5z"></path><path d="M6 12v5c0 1 2.7 3 6 3s6-2 6-3v-5"></path></svg></span>
       <span class="card-txt"><span class="card-kicker">Tomorrow</span><span class="card-value" id="schoolValue">&mdash;</span><span class="card-sub" id="schoolSub"></span></span>
+    </div>
+    <div class="card card--quiet" id="cardSun" hidden data-od-id="sun-card">
+      <span class="card-ico" aria-hidden="true"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.7" stroke-linecap="round" stroke-linejoin="round"><path d="M17 18a5 5 0 0 0-10 0"></path><path d="M12 2v7M4.2 10.2l1.4 1.4M1 18h2M21 18h2M18.4 11.6l1.4-1.4M23 22H1"></path></svg></span>
+      <span class="card-txt"><span class="card-kicker" id="sunKicker">Sunset</span><span class="card-value" id="sunValue">&mdash;</span><span class="card-sub" id="sunSub"></span></span>
     </div>
     <div class="card card--quiet" id="cardBedtime" hidden data-od-id="bedtime-card">
       <span class="card-ico" aria-hidden="true"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.7" stroke-linecap="round" stroke-linejoin="round"><path d="M21 12.8A9 9 0 1 1 11.2 3a7 7 0 0 0 9.8 9.8z"></path></svg></span>
@@ -725,11 +795,24 @@ body.is-locked .lockdot { display: -webkit-flex; display: flex; }
     </div>
 
     <div class="sect">
+      <h3>Talking clock</h3>
+      <div class="row">
+        <div><div class="row-label">Talking clock</div><div class="row-help">Tap the time to hear it said out loud, handy before kids can read a clock. Alarms start with a spoken good morning and the day, and it says good night at bedtime. Uses the iPad's built-in voice, not Siri, and works offline.</div></div>
+        <div class="row-ctl"><button class="switch" id="set-talk" type="button" role="switch" aria-checked="false" aria-label="Talking clock" data-od-id="set-talk"></button></div>
+      </div>
+      <div class="row">
+        <div><div class="row-label">Hear it</div><div class="row-help" id="talkHelp">Says what a tap on the time would say right now.</div></div>
+        <div class="row-ctl"><button class="btn btn-quiet" id="talkTestBtn" type="button">Speak</button></div>
+      </div>
+    </div>
+
+    <div class="sect">
       <h3>Clock style</h3>
       <div class="row-help" style="margin-bottom:1.6vmin;">Pick a look. Each preset changes the colors, the type and the room's ambient light together. <strong>Split-flap</strong> and <strong>Flip &mdash; Ivory</strong> turn the time into flipping tiles. Night mode replaces all of them at night.</div>
       <div class="tgrid" id="themeGrid" data-od-id="theme-gallery">
         <button class="tcard" type="button" data-theme="paper" data-od-id="theme-card-paper"><span class="tprev th-paper"><span class="tdot"></span>10:08</span><span class="tmeta"><span class="tname">Paper</span><span class="thint">Minimal &middot; light</span></span></button>
         <button class="tcard" type="button" data-theme="midnight" data-od-id="theme-card-midnight"><span class="tprev th-midnight"><span class="tdot"></span>10:08</span><span class="tmeta"><span class="tname">Midnight</span><span class="thint">Calm &middot; sophisticated</span></span></button>
+        <button class="tcard" type="button" data-theme="sky" data-od-id="theme-card-sky"><span class="tprev tsky th-sky"><span class="tdot"></span>10:08</span><span class="tmeta"><span class="tname">Live sky</span><span class="thint">Follows the real sun &middot; clouds</span></span></button>
         <button class="tcard" type="button" data-theme="splitflap" data-od-id="theme-card-splitflap"><span class="tprev tflip th-splitflap"><span class="tseg">10</span><span class="tseg">08</span></span><span class="tmeta"><span class="tname">Split-flap</span><span class="thint">Flip clock</span></span></button>
         <button class="tcard" type="button" data-theme="ivory" data-od-id="theme-card-ivory"><span class="tprev tflip th-ivory"><span class="tseg">10</span><span class="tseg">08</span></span><span class="tmeta"><span class="tname">Flip &mdash; Ivory</span><span class="thint">Flip clock &middot; light</span></span></button>
         <button class="tcard" type="button" data-theme="neon" data-od-id="theme-card-neon"><span class="tprev th-neon"><span class="tdot"></span>10:08</span><span class="tmeta"><span class="tname">Neon Stage</span><span class="thint">Pop &middot; bold</span></span></button>
@@ -752,6 +835,10 @@ body.is-locked .lockdot { display: -webkit-flex; display: flex; }
         <div><div class="row-label">Drift protection</div><div class="row-help">Nudges the clock a few pixels every few minutes to protect the screen.</div></div>
         <div class="row-ctl"><button class="switch" id="set-drift" type="button" role="switch" aria-checked="false" aria-label="Drift protection" data-od-id="set-drift"></button></div>
       </div>
+      <div class="row">
+        <div><div class="row-label">Moving background</div><div class="row-help">Drifting clouds and twinkling stars in Live sky, and a slow glow in the other styles. Always still at night. Turn it off if the iPad gets warm.</div></div>
+        <div class="row-ctl"><button class="switch" id="set-motion" type="button" role="switch" aria-checked="false" aria-label="Moving background" data-od-id="set-motion"></button></div>
+      </div>
     </div>
 
     <div class="sect">
@@ -763,6 +850,14 @@ body.is-locked .lockdot { display: -webkit-flex; display: flex; }
       <div class="row">
         <div><div class="row-label">Birthday</div><div class="row-help">Optional. Shows a countdown from 30 days out, then a greeting on the day.</div></div>
         <div class="row-ctl"><input type="date" id="set-birthday" data-od-id="set-birthday"></div>
+      </div>
+      <div class="row">
+        <div><div class="row-label">City</div><div class="row-help" id="locHelp">For sunrise and sunset times and the Live sky style.</div></div>
+        <div class="row-ctl"><select id="set-city" aria-label="City" data-od-id="set-city"></select></div>
+      </div>
+      <div class="row">
+        <div><div class="row-label">Use this iPad's location</div><div class="row-help" id="locBtnHelp">Only works when the page is opened from an https:// address. Saved on this iPad only.</div></div>
+        <div class="row-ctl"><button class="btn btn-quiet" id="locBtn" type="button">Locate</button></div>
       </div>
     </div>
 
@@ -846,7 +941,8 @@ body.is-locked .lockdot { display: -webkit-flex; display: flex; }
       clockTheme: "midnight", driftProtect: true,
       bedtime: "21:00", morning: "07:00", schoolWake: "07:00", weekendWake: "08:30",
       nightMode: true, nightColor: "red", nightLevel: 40, okToWake: true,
-      ringMinutes: 10, lockEnabled: false, lockAutoMin: 0
+      ringMinutes: 10, lockEnabled: false, lockAutoMin: 0,
+      motion: true, talk: false
     },
     fixedHolidays: [
       { monthDay: "01-01", name: "New Year's Day" },
@@ -945,6 +1041,7 @@ body.is-locked .lockdot { display: -webkit-flex; display: flex; }
       nightMode: dd.nightMode, nightColor: dd.nightColor, nightLevel: dd.nightLevel, okToWake: dd.okToWake,
       ringMinutes: dd.ringMinutes, pauseUntil: "",
       lockEnabled: dd.lockEnabled, lockAutoMin: dd.lockAutoMin,
+      motion: dd.motion, talk: dd.talk, location: null,
       alarms: defaultAlarms(), customHolidays: []
     };
   }
@@ -1011,6 +1108,11 @@ body.is-locked .lockdot { display: -webkit-flex; display: flex; }
     if (RING_CHOICES.indexOf(base.ringMinutes) < 0) base.ringMinutes = dd.ringMinutes;
     base.lockAutoMin = intIn(base.lockAutoMin, 0, 5, 0);
     if (!isYMD(base.pauseUntil)) base.pauseUntil = "";
+    base.motion = base.motion !== false;
+    base.talk = base.talk === true;
+    var loc = base.location;
+    base.location = (loc && typeof loc === "object" && typeof loc.name === "string" && isFinite(loc.lat) && isFinite(loc.lng) &&
+      Math.abs(loc.lat) <= 90 && Math.abs(loc.lng) <= 180) ? { name: loc.name, lat: +loc.lat, lng: +loc.lng } : null;
     delete base.nightDim; delete base.theme;
     state = base;
     invalidateHolidays();
@@ -1134,11 +1236,12 @@ body.is-locked .lockdot { display: -webkit-flex; display: flex; }
     midnight:  { dark: true,  face: "digital" },
     splitflap: { dark: true,  face: "flip"    },
     ivory:     { dark: false, face: "flip"    },
+    sky:       { dark: false, face: "digital", sky: true },
     neon:      { dark: true,  face: "digital" },
     blade:     { dark: true,  face: "digital" },
     arcade:    { dark: true,  face: "digital" }
   };
-  var THEME_IDS = ["paper","midnight","splitflap","ivory","neon","blade","arcade"];
+  var THEME_IDS = ["paper","midnight","sky","splitflap","ivory","neon","blade","arcade"];
   function currentTheme() { return THEMES[state.clockTheme] || THEMES.midnight; }
   function applyTheme() {
     var t = currentTheme(), b = document.body, i;
@@ -1147,7 +1250,172 @@ body.is-locked .lockdot { display: -webkit-flex; display: flex; }
     b.classList.remove("face-digital","face-flip","is-dark");
     b.classList.add("th-" + state.clockTheme, "face-" + t.face, "nf-" + state.nightColor);
     if (t.dark) b.classList.add("is-dark");
+    b.classList.toggle("motion", !!state.motion);
+    applySky(true);
   }
+
+  /* ── sunrise & sunset ────────────────────────────────────────────────
+   * The "sunrise equation" (as on Wikipedia), computed on the iPad with
+   * no network. Within about a minute of almanac times at Indian
+   * latitudes. Times come out in the iPad's own time zone. */
+  var CITIES = [
+    ["Ahmedabad", 23.02, 72.57], ["Bengaluru", 12.97, 77.59], ["Bhopal", 23.26, 77.41], ["Bhubaneswar", 20.30, 85.82],
+    ["Chandigarh", 30.73, 76.78], ["Chennai", 13.08, 80.27], ["Dehradun", 30.32, 78.03], ["Delhi", 28.61, 77.21],
+    ["Goa (Panaji)", 15.50, 73.83], ["Guwahati", 26.14, 91.74], ["Hyderabad", 17.39, 78.49], ["Indore", 22.72, 75.86],
+    ["Jaipur", 26.91, 75.79], ["Kochi", 9.93, 76.27], ["Kolkata", 22.57, 88.36], ["Lucknow", 26.85, 80.95],
+    ["Mumbai", 19.08, 72.88], ["Nagpur", 21.15, 79.09], ["Patna", 25.59, 85.14], ["Pune", 18.52, 73.86],
+    ["Srinagar", 34.08, 74.80], ["Thiruvananthapuram", 8.52, 76.94]
+  ];
+  var RAD = Math.PI / 180, sunCache = {};
+  function sunTimes(day, lat, lng) {
+    var key = keyOf(day) + "|" + lat + "|" + lng;
+    if (sunCache.hasOwnProperty(key)) return sunCache[key];
+    var jd0 = Date.UTC(day.getFullYear(), day.getMonth(), day.getDate()) / 86400000 + 2440587.5;
+    var n = Math.ceil(jd0 - 2451545.0 + 0.0008), jStar = n - lng / 360;
+    var M = (357.5291 + 0.98560028 * jStar) % 360;
+    var C = 1.9148 * Math.sin(M * RAD) + 0.02 * Math.sin(2 * M * RAD) + 0.0003 * Math.sin(3 * M * RAD);
+    var L = (M + C + 180 + 102.9372) % 360;
+    var jTransit = 2451545.0 + jStar + 0.0053 * Math.sin(M * RAD) - 0.0069 * Math.sin(2 * L * RAD);
+    var sinD = Math.sin(L * RAD) * Math.sin(23.4397 * RAD), cosD = Math.cos(Math.asin(sinD));
+    var cosW = (Math.sin(-0.833 * RAD) - Math.sin(lat * RAD) * sinD) / (Math.cos(lat * RAD) * cosD);
+    var out = null, w;
+    if (cosW >= -1 && cosW <= 1) {
+      w = Math.acos(cosW) / RAD / 360;
+      out = { rise: new Date((jTransit - w - 2440587.5) * 86400000), set: new Date((jTransit + w - 2440587.5) * 86400000) };
+    }
+    sunCache[key] = out;
+    return out;
+  }
+  function sunFor(day) { return state.location ? sunTimes(day, state.location.lat, state.location.lng) : null; }
+  function minOfDate(d) { return d.getHours() * 60 + d.getMinutes() + d.getSeconds() / 60; }
+  function clockOf(d) { return formatClock(pad2(d.getHours()) + ":" + pad2(d.getMinutes())); }
+
+  /* ── live sky ────────────────────────────────────────────────────── */
+  var SKY_NAMES = ["night","dawn","rise","day","gold","dusk"], skyColors = null, starsBuilt = false, skyPlaced = false;
+  function clamp01(x) { return x < 0 ? 0 : (x > 1 ? 1 : x); }
+  function hexRgb(h) {
+    h = String(h || "").replace(/[\s#]/g, "");
+    if (h.length === 3) h = h.charAt(0) + h.charAt(0) + h.charAt(1) + h.charAt(1) + h.charAt(2) + h.charAt(2);
+    var v = parseInt(h, 16);
+    return isNaN(v) ? [20, 30, 60] : [(v >> 16) & 255, (v >> 8) & 255, v & 255];
+  }
+  function readSkyColors() {
+    var cs = window.getComputedStyle(document.documentElement), out = {}, i, n;
+    for (i = 0; i < SKY_NAMES.length; i++) {
+      n = SKY_NAMES[i];
+      out[n] = [hexRgb(cs.getPropertyValue("--sky-" + n + "-top")), hexRgb(cs.getPropertyValue("--sky-" + n + "-bot"))];
+    }
+    return out;
+  }
+  function mixRgb(a, b, f) { return [Math.round(a[0] + (b[0] - a[0]) * f), Math.round(a[1] + (b[1] - a[1]) * f), Math.round(a[2] + (b[2] - a[2]) * f)]; }
+  function rgbStr(c) { return "rgb(" + c[0] + "," + c[1] + "," + c[2] + ")"; }
+  function lum(c) { return (0.299 * c[0] + 0.587 * c[1] + 0.114 * c[2]) / 255; }
+  function skyState(now) {
+    var st = sunFor(now), R = st ? minOfDate(st.rise) : 360, S = st ? minOfDate(st.set) : 1080;
+    var m = minOfDate(now), C = skyColors || (skyColors = readSkyColors());
+    var stops = [[R - 90, "night"], [R - 35, "dawn"], [R + 5, "rise"], [R + 60, "day"], [S - 75, "day"], [S - 20, "gold"], [S + 15, "dusk"], [S + 70, "night"]];
+    var top = C.night[0], bot = C.night[1], i, a, b, f;
+    for (i = 0; i < stops.length - 1; i++) {
+      a = stops[i]; b = stops[i + 1];
+      if (m >= a[0] && m < b[0]) {
+        f = (m - a[0]) / (b[0] - a[0]);
+        top = mixRgb(C[a[1]][0], C[b[1]][0], f); bot = mixRgb(C[a[1]][1], C[b[1]][1], f);
+        break;
+      }
+    }
+    var stars = Math.max(clamp01((R - 30 - m) / 45), clamp01((m - S - 10) / 45));
+    return { top: top, bot: bot, stars: stars, clouds: 1 - stars, sunP: (m - R) / (S - R) };
+  }
+  function buildStars() {
+    if (starsBuilt) return;
+    starsBuilt = true;
+    var html = "", i, d;
+    for (i = 0; i < 46; i++) {
+      d = (Math.random() * 4).toFixed(1);
+      html += '<span class="star' + (i % 7 === 0 ? " big" : "") + (i % 4 === 0 ? " tw" : "") + '" style="left:' + (Math.random() * 100).toFixed(1) +
+        '%;top:' + (Math.random() * 62).toFixed(1) + '%;-webkit-animation-delay:-' + d + 's;animation-delay:-' + d + 's"></span>';
+    }
+    $("skyStars").innerHTML = html;
+  }
+  function setTransition(el, v) { el.style.webkitTransition = v; el.style.transition = v; }
+  function applySky(reset) {
+    var b = document.body;
+    if (!currentTheme().sky) { b.classList.remove("sky-dark"); return; }
+    buildStars();
+    var s = skyState(new Date()), sky = $("sky"), sun = $("skySun"), t = rgbStr(s.top), bo = rgbStr(s.bot), p, x, y, tr;
+    sky.style.background = "-webkit-linear-gradient(top, " + t + ", " + bo + ")";
+    sky.style.background = "linear-gradient(to bottom, " + t + ", " + bo + ")";
+    $("skyStars").style.opacity = s.stars.toFixed(2);
+    $("skyClouds").style.opacity = s.clouds.toFixed(2);
+    p = clamp01(s.sunP);
+    x = Math.round(window.innerWidth * (0.08 + 0.84 * p));
+    y = Math.round(window.innerHeight * (0.8 - 0.62 * Math.sin(Math.PI * p)));
+    tr = "translate3d(" + x + "px," + y + "px,0)";
+    if (reset || !skyPlaced) setTransition(sun, "none");
+    sun.style.webkitTransform = tr; sun.style.transform = tr;
+    sun.style.opacity = (s.sunP > -0.03 && s.sunP < 1.03) ? "1" : "0";
+    if (reset || !skyPlaced) { void sun.offsetWidth; setTransition(sun, ""); skyPlaced = true; }
+    var dark = (lum(s.top) + lum(s.bot)) / 2 < 0.5;
+    b.classList.toggle("sky-dark", dark);
+    b.classList.toggle("is-dark", dark);
+  }
+
+  /* ── talking clock ───────────────────────────────────────────────────
+   * Uses the Web Speech API (in Safari since iOS 7) with the iPad's own
+   * voices; prefers an Indian English voice when one is installed. Like
+   * audio, iOS only allows speech after a first tap. */
+  var synthOK = !!(window.speechSynthesis && window.SpeechSynthesisUtterance), speechUnlocked = false, lastBedSaid = "";
+  function pickVoice() {
+    var vs = [], pref = ["en-IN", "en-GB", "en-AU", "en-US"], i, j;
+    try { vs = window.speechSynthesis.getVoices() || []; } catch (e) {}
+    for (j = 0; j < pref.length; j++) for (i = 0; i < vs.length; i++) if (String(vs[i].lang).replace("_", "-") === pref[j]) return vs[i];
+    for (i = 0; i < vs.length; i++) if (/^en/i.test(vs[i].lang)) return vs[i];
+    return null;
+  }
+  function say(text) {
+    if (!synthOK) return;
+    try {
+      var ss = window.speechSynthesis, u = new window.SpeechSynthesisUtterance(text), v = pickVoice();
+      ss.cancel();
+      if (v) { u.voice = v; u.lang = v.lang; } else u.lang = "en-IN";
+      u.rate = 0.9;
+      ss.speak(u);
+    } catch (e) {}
+  }
+  function unlockSpeech() {
+    if (speechUnlocked || !synthOK) return;
+    speechUnlocked = true;
+    try { var u = new window.SpeechSynthesisUtterance(" "); u.volume = 0; window.speechSynthesis.speak(u); } catch (e) {}
+  }
+  function spokenTime(d) {
+    var h = d.getHours(), m = d.getMinutes(), h12 = h % 12 || 12;
+    var part = h < 5 ? "at night" : (h < 12 ? "in the morning" : (h < 17 ? "in the afternoon" : (h < 21 ? "in the evening" : "at night")));
+    return (m === 0 ? h12 + " o'clock" : h12 + ":" + pad2(m)) + " " + part;
+  }
+  function spokenHHMM(hhmm) { var t = minutesOf(hhmm), d = new Date(2000, 0, 1, Math.floor(t / 60), t % 60); return spokenTime(d); }
+  function namePart() { return state.name ? ", " + state.name : ""; }
+  function todayPhrase(now) {
+    var hol = holidayOn(now), wd = now.getDay(), out = " Today is " + DAYS[wd] + ", " + now.getDate() + " " + MONTHS[now.getMonth()] + ".";
+    if (hol && hol.off) out += " No school today. It's " + hol.name + ".";
+    else if (hol) out += " Today is " + hol.name + ".";
+    return out;
+  }
+  function tapPhrase() {
+    var now = new Date(), out = "It's " + spokenTime(now) + ".", day;
+    if (mode === "night") {
+      day = nowMinutes(now) >= wakeMinutesFor(now) ? addDays(now, 1) : now;
+      out += " It's still night time. Stay in bed until " + spokenHHMM(hhmmOf(wakeMinutesFor(day))) + ".";
+    } else if (mode === "wake") out += " Good morning" + namePart() + "! It's time to get up.";
+    else out += todayPhrase(now);
+    return out;
+  }
+  function alarmPhrase() {
+    var now = new Date(), wd = now.getDay(), hol = holidayOn(now);
+    var school = wd > 0 && wd < 6 && !(hol && hol.off) ? " It's a school day." : "";
+    return "Good morning" + namePart() + "! It's " + spokenTime(now) + ". Time to get up." + todayPhrase(now) + school;
+  }
+  function bedPhrase() { return "It's " + spokenTime(new Date()) + ". Time for bed. Good night" + namePart() + ". Sleep tight!"; }
+  function onTimeTap() { if (state.talk) say(tapPhrase()); }
 
   /* ── night / morning mode ────────────────────────────────────────────
    * "night": bedtime → wake-up time. Wake-up is the day's earliest alarm
@@ -1306,6 +1574,17 @@ body.is-locked .lockdot { display: -webkit-flex; display: flex; }
       $("schoolSub").textContent = hol ? hol.name : (w ? "Wake " + formatClock(w.time) : (pausedOn(tomorrow) ? "Alarms paused" : ""));
     }
 
+    var st = sunFor(now), st2;
+    if (st) {
+      $("cardSun").hidden = false;
+      if (now < st.rise) { $("sunKicker").textContent = "Sunrise"; $("sunValue").textContent = clockOf(st.rise); $("sunSub").textContent = "Sunset " + clockOf(st.set); }
+      else if (now < st.set) { $("sunKicker").textContent = "Sunset"; $("sunValue").textContent = clockOf(st.set); $("sunSub").textContent = "Sunrise was " + clockOf(st.rise); }
+      else {
+        st2 = sunFor(addDays(now, 1));
+        $("sunKicker").textContent = "Sunrise tomorrow"; $("sunValue").textContent = st2 ? clockOf(st2.rise) : "\u2014"; $("sunSub").textContent = "Sunset was " + clockOf(st.set);
+      }
+    } else { $("cardSun").hidden = true; }
+
     var todayHol = holidayOn(now);
     if (todayHol) { $("festivalValue").textContent = todayHol.name; $("cardFestival").hidden = false; }
     else { $("cardFestival").hidden = true; }
@@ -1420,6 +1699,7 @@ body.is-locked .lockdot { display: -webkit-flex; display: flex; }
    * inside a tap is what gives the page permission to ring later. */
   function unlockAudio() {
     initAudio();
+    if (state.talk) unlockSpeech();
     requestWakeLock();
     if (audioUnlocked || unlocking || ringing || previewing) return;
     var el = audioEl(), p;
@@ -1540,10 +1820,12 @@ body.is-locked .lockdot { display: -webkit-flex; display: flex; }
     $("dismissBtn").textContent = al.test ? "Stop" : "I'm awake";
     $("alarmOverlay").classList.add("is-open");
     startSound(al.sound === "silent" ? "chimes" : al.sound, al.test ? LEVELS.length - 1 : 0);
+    if (state.talk) say(alarmPhrase());
     var d = $("dismissBtn"); if (d && d.focus) { try { d.focus(); } catch (e) {} }
   }
   function stopAlarm() {
     stopSound();
+    if (synthOK) { try { window.speechSynthesis.cancel(); } catch (e) {} }
     $("alarmOverlay").classList.remove("is-open");
     ringing = null; applyMode();
     if (alarmLastFocus && alarmLastFocus.focus) { try { alarmLastFocus.focus(); } catch (e) {} }
@@ -1755,11 +2037,44 @@ body.is-locked .lockdot { display: -webkit-flex; display: flex; }
     pz.addEventListener("change", function(){ state.pauseUntil = isYMD(pz.value) ? pz.value : ""; alarmsChanged(); });
     $("clearPauseBtn").addEventListener("click", function(){ state.pauseUntil = ""; pz.value = ""; alarmsChanged(); });
     $("testAlarmBtn").addEventListener("click", testAlarm);
+    $("set-motion").addEventListener("click", function(){ state.motion = !state.motion; setSwitch(this, state.motion); saveState(); applyTheme(); });
+    $("set-talk").addEventListener("click", function(){ state.talk = !state.talk; setSwitch(this, state.talk); saveState(); if (state.talk) unlockSpeech(); });
+    $("talkTestBtn").addEventListener("click", function(){ unlockSpeech(); say(tapPhrase()); });
+    if (!synthOK) $("talkHelp").textContent = "This browser has no speech voices, so the talking clock can't work here.";
+    var city = $("set-city");
+    city.addEventListener("change", function(){
+      var v = city.value, i;
+      if (v === "") state.location = null;
+      for (i = 0; i < CITIES.length; i++) if (CITIES[i][0] === v) state.location = { name: v, lat: CITIES[i][1], lng: CITIES[i][2] };
+      locationChanged();
+    });
+    $("locBtn").addEventListener("click", function(){
+      var help = $("locBtnHelp");
+      if (!navigator.geolocation) { help.textContent = "This browser can't share its location. Pick a city instead."; return; }
+      help.textContent = "Asking for location\u2026";
+      navigator.geolocation.getCurrentPosition(function (pos) {
+        state.location = { name: "This iPad's location", lat: Math.round(pos.coords.latitude * 100) / 100, lng: Math.round(pos.coords.longitude * 100) / 100 };
+        help.textContent = "Saved on this iPad only.";
+        locationChanged();
+      }, function (err) {
+        help.textContent = (err && err.code === 1 ? "Location permission was refused. " : "Couldn't get the location. ") +
+          "It only works when the page is opened from an https:// address. Pick a city instead.";
+      }, { timeout: 15000, maximumAge: 86400000 });
+    });
     segBind("set-relock", function(v){ state.lockAutoMin = parseInt(v,10) || 0; saveState(); });
     bindThemeGallery();
     $("holidayHelp").textContent = SEED.note;
     syncLockUI();
   }
+  function renderCityPicker() {
+    var html = '<option value="">Not set</option>', i, cur = state.location ? state.location.name : "", st;
+    for (i = 0; i < CITIES.length; i++) html += '<option value="' + esc(CITIES[i][0]) + '"' + (cur === CITIES[i][0] ? " selected" : "") + '>' + esc(CITIES[i][0]) + '</option>';
+    if (state.location && html.indexOf('selected') < 0) html += '<option value="__here" selected>' + esc(state.location.name) + '</option>';
+    $("set-city").innerHTML = html;
+    st = sunFor(new Date());
+    $("locHelp").textContent = st ? ("Today: sunrise " + clockOf(st.rise) + " \u00b7 sunset " + clockOf(st.set) + ".") : "For sunrise and sunset times and the Live sky style. Without a city, Live sky assumes 6 AM to 6 PM.";
+  }
+  function locationChanged() { sunCache = {}; saveState(); renderCityPicker(); renderCards(); applySky(true); }
   function populateSettings() {
     $("set-name").value = state.name;
     $("set-birthday").value = state.birthday;
@@ -1775,6 +2090,9 @@ body.is-locked .lockdot { display: -webkit-flex; display: flex; }
     $("set-nightlevel").value = state.nightLevel;
     segSet("set-ring", String(state.ringMinutes));
     $("set-pause").value = state.pauseUntil;
+    setSwitch($("set-motion"), state.motion);
+    setSwitch($("set-talk"), state.talk);
+    renderCityPicker();
     syncLockUI();
   }
   var sheetLastFocus = null;
@@ -1943,7 +2261,11 @@ body.is-locked .lockdot { display: -webkit-flex; display: flex; }
       renderClock(false);
       checkAlarms(nowMs);
       checkAutoStop(nowMs);
-      if (minute !== lastMinuteTick) { lastMinuteTick = minute; applyMode(); renderCards(); refreshHealth(); }
+      if (minute !== lastMinuteTick) {
+        lastMinuteTick = minute; applyMode(); applySky(false); renderCards(); refreshHealth();
+        var d = new Date(nowMs);
+        if (state.talk && !ringing && nowMinutes(d) === minutesOf(state.bedtime) && lastBedSaid !== keyOf(d)) { lastBedSaid = keyOf(d); say(bedPhrase()); }
+      }
       if (nowMs - rt.lastTick >= 15000) { rt.lastTick = nowMs; saveRuntime(); }
       if (isOpen("settingsSheet") && !isOpen("lockScreen") && nowMs - lastInteract > SETTINGS_IDLE_MS) closeSettings();
       if (isOpen("lockScreen") && nowMs - lastInteract > LOCK_IDLE_MS) cancelLockFlow();
@@ -1955,7 +2277,7 @@ body.is-locked .lockdot { display: -webkit-flex; display: flex; }
       if (state.lockAutoMin === 0 && !isOpen("settingsSheet")) unlockedUntil = 0;
       return;
     }
-    requestWakeLock(); applyMode(); renderClock(true); renderCards();
+    requestWakeLock(); applyMode(); applySky(true); renderClock(true); renderCards();
   }
 
   function init() {
@@ -1977,6 +2299,9 @@ body.is-locked .lockdot { display: -webkit-flex; display: flex; }
     document.addEventListener("input", mark, true);
     document.addEventListener("scroll", mark, true);
     $("stage").addEventListener("click", onStageTap);
+    document.querySelector(".clockrow").addEventListener("click", onTimeTap);
+    $("flipclock").addEventListener("click", onTimeTap);
+    window.addEventListener("resize", function () { applySky(true); });
     $("settingsBtn").addEventListener("click", requestSettings);
     $("doneBtn").addEventListener("click", closeSettings);
     $("snoozeBtn").addEventListener("click", snoozeAlarm);
