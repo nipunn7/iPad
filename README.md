@@ -52,6 +52,25 @@ else. Settings are saved on that iPad.
   night. This uses the iPad's built-in text-to-speech voices, not Siri. If
   installed, it uses an Indian English voice (Settings → General →
   Accessibility → Speech → Voices on iOS 12).
+- **Sleep sounds** (the moon button at the top): rain, ocean, fan or soft
+  noise, made on the iPad (no internet) as seamless 16-second loops. Soft,
+  medium or loud; plays for 15 min, 30 min, 1 hour or all night (until the
+  wake-up time); can start by itself at bedtime. It drops one volume step for
+  the last 2 minutes before stopping. A real alarm ends it; a timer pauses it
+  and it carries on afterwards. iOS doesn't let a web page change volume
+  smoothly, so the fade is a single step, not a gradual one.
+- **Routine cards**: picture checklists the child taps off. The bedtime
+  routine appears 45 minutes before bedtime (30 min or 1 hour if you prefer)
+  and the morning routine for 1½ hours after wake-up. Each tick goes green
+  with a ding. When all are done, stars burst out with "⭐ All done! 3 days
+  in a row", and with the talking clock on it says "Great job". Steps (up to
+  6, with emoji pictures that exist on iOS 12) are edited under Settings →
+  Routines, which also has **Try it now**.
+- **"Sleeps until" countdowns**: the nearest countdown shows as a card, like
+  "4 sleeps until Grandma visits", or "12 sleeps until Diwali" for festivals
+  in the next 3 weeks. "1 more sleep" and "It's today!" get the festive card.
+  The birthday card now counts sleeps too. With the talking clock on, tapping
+  the time mentions countdowns within 2 weeks.
 - **Countdown timer**: the hourglass next to the gear opens big buttons
   (1 min to 1 hour) and optional labels (Tidy up, Brush teeth, Reading,
   Homework, Screen time). A ring empties as time runs out and turns amber for
@@ -169,6 +188,15 @@ uses the built-in speech voices instead. What does work on that iPad:
   from an `https://` address (Safari's rule). Otherwise pick a city. Only
   India's main cities are listed. Times assume the iPad's clock is set to the
   local time zone.
+- **Sleep sounds on the iPad**: the sound and its seamless loop were checked
+  in Chromium (the clip decodes, loops, and the loop point has no click).
+  Safari can leave a tiny gap each time an audio loop restarts. With a
+  16-second loop that would be a brief hiccup every 16 seconds, if it happens
+  at all; I couldn't check it on an iPad. Sleep sounds stop if the page is
+  reloaded, and need one tap (like alarms) before they can start by
+  themselves.
+- **Routine and countdown emoji** were shown in Chromium using Google's emoji;
+  the iPad draws Apple's versions.
 - **Holidays**: dated festivals are preloaded for 2026 and 2027 only. After
   that, only fixed-date ones (Republic Day, Independence Day, Gandhi Jayanti,
   Christmas…) remain, so add new dates under Settings → Holidays. Only the 14

@@ -310,7 +310,7 @@ button, input, select { font-family: inherit; color: inherit; }
 .iconbtn svg { width: 22px; height: 22px; display: block; }
 .iconbtn:active { background-color: var(--glass-strong); }
 .iconbtn:focus { outline: none; box-shadow: inset 0 0 0 1px var(--glass-line), var(--focus-ring); }
-.timerbtn.is-running { width: auto; padding: 0 16px; border-radius: var(--radius-pill); background-color: var(--accent); color: var(--accent-on); box-shadow: none; }
+.iconbtn.is-running { width: auto; padding: 0 16px; border-radius: var(--radius-pill); background-color: var(--accent); color: var(--accent-on); box-shadow: none; }
 .timerbtn-txt { margin-left: 8px; font-size: 18px; font-weight: 900; }
 .timerbtn-txt:empty { display: none; }
 .lockdot { position: absolute; right: 2px; bottom: 2px; width: 16px; height: 16px; border-radius: 50%; background-color: var(--accent); color: var(--accent-on); display: none; align-items: center; justify-content: center; }
@@ -597,6 +597,66 @@ input[type="range"]::-webkit-slider-thumb { -webkit-appearance: none; width: 28p
 .timer-actions { display: flex; margin-top: 4vmin; }
 .timer-actions .btn { margin: 0 1.2vmin; font-size: 2.6vmin; padding: 1.6vmin 4vmin; min-height: 56px; }
 
+/* ── Routine cards ────────────────────────────────────────────────────
+ * Big picture tiles the child taps off; they replace the info cards while
+ * a routine is showing. */
+.routine { flex: 0 0 auto; position: relative; display: flex; flex-direction: column; align-items: center; padding-bottom: 0.5vmin; }
+.routine-head { display: flex; align-items: center; margin-bottom: 1.4vmin; text-shadow: var(--text-shadow); }
+.routine-title { font-size: 2.6vmin; font-weight: 900; }
+.routine-count { margin-left: 1.2vmin; padding: 0.5vmin 1.6vmin; border-radius: var(--radius-pill); background-color: var(--glass); box-shadow: inset 0 0 0 1px var(--glass-line); font-size: 2vmin; font-weight: 900; text-shadow: none; }
+.routine-steps { display: flex; justify-content: center; flex-wrap: wrap; }
+.rstep {
+  -webkit-appearance: none; appearance: none; border: none; cursor: pointer; position: relative;
+  width: 14.5vmin; min-height: 15vmin; margin: 0.6vmin; padding: 1.4vmin 0.8vmin; border-radius: var(--radius-lg);
+  background-color: var(--glass-strong); box-shadow: inset 0 0 0 1px var(--glass-line); color: #fff;
+  display: flex; flex-direction: column; align-items: center; justify-content: center;
+  transition: background-color 0.25s, color 0.25s;
+}
+.rstep-emo { font-size: 6.4vmin; line-height: 1; }
+.rstep-txt { margin-top: 1vmin; font-size: 1.9vmin; font-weight: 900; line-height: 1.15; text-align: center; }
+.rstep-tick { position: absolute; top: -1vmin; right: -1vmin; width: 4.4vmin; height: 4.4vmin; border-radius: 50%; background-color: #fff; color: #1f9d4c; display: none; align-items: center; justify-content: center; box-shadow: 0 0.4vmin 1.2vmin rgba(0,0,0,0.25); }
+.rstep-tick svg { width: 2.8vmin; height: 2.8vmin; display: block; }
+.rstep.is-done { background-color: var(--wake-green); box-shadow: none; color: var(--wake-green-ink); }
+.rstep.is-done .rstep-tick { display: flex; }
+.rstep.pop { animation: pop 0.35s var(--ease); }
+.rstep:focus { outline: none; }
+@keyframes pop { 0% { transform: scale(1); } 50% { transform: scale(1.14); } 100% { transform: scale(1); } }
+.routine-done { display: none; align-items: center; margin-top: 1.4vmin; padding: 1vmin 2.8vmin; border-radius: var(--radius-pill); background-image: var(--festive); color: #3a1d00; font-size: 2.6vmin; font-weight: 900; text-shadow: none; }
+.routine.is-done .routine-done { display: flex; animation: pop 0.5s var(--ease); }
+.has-routine .cards, .has-routine .weekstrip { display: none; }
+.burst { position: absolute; left: 50%; top: 50%; width: 0; height: 0; pointer-events: none; z-index: 5; }
+.burst span { position: absolute; left: -2.2vmin; top: -2.2vmin; font-size: 4.4vmin; line-height: 1; transition: transform 1.1s cubic-bezier(0.2,0.7,0.3,1), opacity 1.1s ease-in; }
+@media (orientation: landscape) { .has-routine .a-face { width: 34vmin; height: 34vmin; } }
+
+/* countdown card: an emoji instead of a line icon */
+.card-emo { font-size: 3.8vmin; line-height: 1; margin-right: 1.4vmin; flex: 0 0 auto; }
+
+/* ── Sleep sounds panel (same glass sheet as the timer) ──────────────── */
+.sleep-grid { grid-template-columns: repeat(4, 1fr); }
+.tbtn .emo { display: block; font-size: 7vmin; line-height: 1.1; }
+.tbtn.is-on { background-color: var(--accent); color: var(--accent-on); box-shadow: none; }
+.tbtn.is-on small { color: var(--accent-on); }
+.sleep-row { display: flex; align-items: center; justify-content: space-between; max-width: 560px; margin: 2.6vmin auto 0; }
+.sleep-lbl { font-size: 2.3vmin; font-weight: 900; text-shadow: var(--text-shadow); margin-right: 2vmin; }
+.seg.glass { background-color: var(--glass-strong); box-shadow: inset 0 0 0 1px var(--glass-line); }
+.seg.glass button { color: var(--ink-soft); }
+.seg.glass button.is-on { color: var(--accent-on); }
+.sleep-play { display: block; margin: 4vmin auto 0; font-size: 3vmin; padding: 2vmin 9vmin; min-height: 60px; }
+.sleep-status { text-align: center; margin-top: 2vmin; font-size: 2.2vmin; font-weight: 800; color: var(--ink-soft); min-height: 1.4em; text-shadow: var(--text-shadow); }
+.is-night .timerview { background-color: rgba(0,0,0,0.88); }
+/* While the timer or sleep panel is open, hide the clock behind it so only
+ * the moving scene shows through. */
+.panel-open .stage, .panel-open .soundpill { opacity: 0 !important; pointer-events: none; }
+
+/* settings: routine steps and countdown editors */
+.steprow { display: flex; align-items: center; padding: 1vmin 0; border-bottom: 1px solid var(--border); }
+.steprow select.emo-pick { font-size: 3vmin; padding: 0.6vmin 1.2vmin; margin-right: 1.2vmin; min-width: 64px; }
+.steprow input[type="text"] { flex: 1 1 auto; min-width: 0; margin-right: 1.2vmin; }
+.steprow input[type="date"] { margin-right: 0.4vmin; }
+.steprow .btn { margin-left: 0.8vmin; padding: 1.2vmin 2vmin; }
+.btn:disabled { opacity: 0.35; cursor: default; }
+.trybtns .btn { margin-left: 1vmin; }
+
 @media (orientation: portrait) {
   .dow { font-size: 6.6vmin; }
   .dateline { font-size: 3.8vmin; }
@@ -655,6 +715,10 @@ input[type="range"]::-webkit-slider-thumb { -webkit-appearance: none; width: 28p
   <header class="topbar">
     <div class="greeting" id="greeting" data-od-id="greeting">Good evening</div>
     <div class="topbar-right">
+    <button class="iconbtn sleepbtn" id="sleepBtn" type="button" aria-label="Sleep sounds" data-od-id="sleep-open">
+      <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="M20 14.5A8 8 0 1 1 9.5 4a6.5 6.5 0 0 0 10.5 10.5z"></path><path d="M15 2.5h4.5l-4.5 4.5h4.5"></path></svg>
+      <span class="timerbtn-txt" id="sleepBtnTxt"></span>
+    </button>
     <button class="iconbtn timerbtn" id="timerBtn" type="button" aria-label="Timer" data-od-id="timer-open">
       <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.7" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="M6 2h12M6 22h12"></path><path d="M7 2v3.5a5 5 0 0 0 10 0V2M7 22v-3.5a5 5 0 0 1 10 0V22"></path></svg>
       <span class="timerbtn-txt" id="timerBtnTxt"></span>
@@ -700,6 +764,13 @@ input[type="range"]::-webkit-slider-thumb { -webkit-appearance: none; width: 28p
     </div>
   </main>
 
+  <section class="routine" id="routine" hidden data-od-id="routine">
+    <div class="routine-head"><span class="routine-title" id="routineTitle">Bedtime routine</span><span class="routine-count" id="routineCount"></span></div>
+    <div class="routine-steps" id="routineSteps"></div>
+    <div class="routine-done" id="routineDoneText">All done!</div>
+    <div class="burst" id="burst"></div>
+  </section>
+
   <footer class="cards" id="cards">
     <div class="card" id="cardAlarm" data-od-id="next-alarm-card">
       <span class="card-ico" aria-hidden="true"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.7" stroke-linecap="round" stroke-linejoin="round"><path d="M18 8a6 6 0 0 0-12 0c0 7-3 9-3 9h18s-3-2-3-9"></path><path d="M13.7 21a2 2 0 0 1-3.4 0"></path></svg></span>
@@ -712,6 +783,10 @@ input[type="range"]::-webkit-slider-thumb { -webkit-appearance: none; width: 28p
     <div class="card card--quiet" id="cardSun" hidden data-od-id="sun-card">
       <span class="card-ico" aria-hidden="true"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.7" stroke-linecap="round" stroke-linejoin="round"><path d="M17 18a5 5 0 0 0-10 0"></path><path d="M12 2v7M4.2 10.2l1.4 1.4M1 18h2M21 18h2M18.4 11.6l1.4-1.4M23 22H1"></path></svg></span>
       <span class="card-txt"><span class="card-kicker" id="sunKicker">Sunset</span><span class="card-value" id="sunValue">&mdash;</span><span class="card-sub" id="sunSub"></span></span>
+    </div>
+    <div class="card card--quiet" id="cardCount" hidden data-od-id="countdown-card">
+      <span class="card-emo" id="countEmo" aria-hidden="true"></span>
+      <span class="card-txt"><span class="card-kicker" id="countKicker">Countdown</span><span class="card-value" id="countValue">&mdash;</span><span class="card-sub" id="countSub"></span></span>
     </div>
     <div class="card card--quiet" id="cardBedtime" hidden data-od-id="bedtime-card">
       <span class="card-ico" aria-hidden="true"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.7" stroke-linecap="round" stroke-linejoin="round"><path d="M21 12.8A9 9 0 1 1 11.2 3a7 7 0 0 0 9.8 9.8z"></path></svg></span>
@@ -729,6 +804,26 @@ input[type="range"]::-webkit-slider-thumb { -webkit-appearance: none; width: 28p
 </div>
 
 <div class="soundpill" id="soundPill" hidden>Tap anywhere to turn on alarm sound</div>
+
+<div class="timerview sleepview" id="sleepView" role="dialog" aria-modal="true" aria-label="Sleep sounds">
+  <div class="timer-head">
+    <h2>Sleep sounds</h2>
+    <button class="btn btn-quiet" id="sleepHide" type="button">Back to clock</button>
+  </div>
+  <div class="timer-pick">
+    <div class="timer-grid sleep-grid" id="sleepGrid">
+      <button class="tbtn" type="button" data-s="rain"><span class="emo">🌧️</span><small>Rain</small></button>
+      <button class="tbtn" type="button" data-s="ocean"><span class="emo">🌊</span><small>Ocean</small></button>
+      <button class="tbtn" type="button" data-s="fan"><span class="emo">🌀</span><small>Fan</small></button>
+      <button class="tbtn" type="button" data-s="noise"><span class="emo">☁️</span><small>Soft noise</small></button>
+    </div>
+    <div class="sleep-row"><span class="sleep-lbl">Volume</span><div class="seg glass" id="sleepLevel"><button type="button" data-v="0">Soft</button><button type="button" data-v="1">Medium</button><button type="button" data-v="2">Loud</button></div></div>
+    <div class="sleep-row"><span class="sleep-lbl">Play for</span><div class="seg glass" id="sleepMins"><button type="button" data-v="15">15 min</button><button type="button" data-v="30">30 min</button><button type="button" data-v="60">1 hour</button><button type="button" data-v="0">All night</button></div></div>
+    <div class="sleep-row"><span class="sleep-lbl">Start by itself at bedtime</span><button class="switch" id="sleepAuto" type="button" role="switch" aria-checked="false" aria-label="Start sleep sounds at bedtime"></button></div>
+    <button class="btn btn-primary sleep-play" id="sleepPlay" type="button">Play</button>
+    <div class="sleep-status" id="sleepStatus"></div>
+  </div>
+</div>
 
 <div class="timerview" id="timerView" role="dialog" aria-modal="true" aria-label="Timer">
   <div class="timer-head">
@@ -870,6 +965,45 @@ input[type="range"]::-webkit-slider-thumb { -webkit-appearance: none; width: 28p
         <div><div class="row-label">Hear it</div><div class="row-help" id="talkHelp">Says what a tap on the time would say right now.</div></div>
         <div class="row-ctl"><button class="btn btn-quiet" id="talkTestBtn" type="button">Speak</button></div>
       </div>
+    </div>
+
+    <div class="sect">
+      <h3>Routines</h3>
+      <div class="row">
+        <div><div class="row-label">Show routine cards</div><div class="row-help">Picture checklists your child taps off: the bedtime routine before bedtime, the morning routine after wake-up. Finishing one gives a star and counts the days in a row.</div></div>
+        <div class="row-ctl"><button class="switch" id="set-routines" type="button" role="switch" aria-checked="false" aria-label="Show routine cards" data-od-id="set-routines"></button></div>
+      </div>
+      <div class="row">
+        <div><div class="row-label">Bedtime routine shows</div><div class="row-help">This long before bedtime.</div></div>
+        <div class="row-ctl"><div class="seg" id="set-rlead"><button type="button" data-v="30">30 min</button><button type="button" data-v="45">45 min</button><button type="button" data-v="60">1 hour</button></div></div>
+      </div>
+      <div class="row">
+        <div><div class="row-label">Morning routine shows for</div><div class="row-help">Starting at the wake-up time.</div></div>
+        <div class="row-ctl"><div class="seg" id="set-rmorning"><button type="button" data-v="60">1 hour</button><button type="button" data-v="90">1&frac12; hours</button><button type="button" data-v="120">2 hours</button></div></div>
+      </div>
+      <div class="subhead">Morning steps (up to 6)</div>
+      <div id="stepsMorning"></div>
+      <button class="btn btn-quiet" id="addStepMorning" type="button" style="margin-top:1.2vmin;">+ Add step</button>
+      <div class="subhead">Bedtime steps (up to 6)</div>
+      <div id="stepsBedtime"></div>
+      <button class="btn btn-quiet" id="addStepBedtime" type="button" style="margin-top:1.2vmin;">+ Add step</button>
+      <div class="row" style="margin-top:2vmin;">
+        <div><div class="row-label">Try it now</div><div class="row-help">Closes Settings and shows a routine for 2 minutes. Ticks made while trying don't count.</div></div>
+        <div class="row-ctl trybtns"><button class="btn btn-quiet" id="tryMorning" type="button">Morning</button><button class="btn btn-quiet" id="tryBedtime" type="button">Bedtime</button></div>
+      </div>
+    </div>
+
+    <div class="sect">
+      <h3>Countdowns</h3>
+      <div class="row-help">Young children understand &ldquo;sleeps&rdquo; better than dates. The nearest countdown shows as a card, like &ldquo;4 sleeps until Diwali&rdquo;. The birthday countdown is set under Room.</div>
+      <div class="row">
+        <div><div class="row-label">Festivals</div><div class="row-help">Count down to festivals in the holiday list, from 3 weeks before.</div></div>
+        <div class="row-ctl"><button class="switch" id="set-festcd" type="button" role="switch" aria-checked="false" aria-label="Festival countdowns" data-od-id="set-festcd"></button></div>
+      </div>
+      <div class="subhead">Your own</div>
+      <div id="eventList"></div>
+      <div class="steprow" style="border-bottom:none;"><select class="emo-pick" id="newEventEmoji" aria-label="Picture"></select><input type="text" id="newEventName" placeholder="e.g. Grandma visits" maxlength="30" aria-label="Name"><input type="date" id="newEventDate" aria-label="Date"></div>
+      <button class="btn btn-quiet" id="addEventBtn" type="button">+ Add countdown</button>
     </div>
 
     <div class="sect">
@@ -1071,7 +1205,7 @@ input[type="range"]::-webkit-slider-thumb { -webkit-appearance: none; width: 28p
     note: "Festival dates are preloaded for 2026 and 2027. “No school” days are India's national gazetted holidays. Only those skip alarms set to “Skip school holidays”. Regional festivals (Holi, Janmashtami, Pongal…) show on the clock but don't skip alarms. If your school is closed, add the day below. Lunar and Islamic dates can move a day by region."
   };
 
-  var VERSION = "3.0 (scenes)";
+  var VERSION = "3.1 (sleep sounds, routines, countdowns)";
 
   /* ── helpers ─────────────────────────────────────────────────────── */
   function $(id) { return document.getElementById(id); }
@@ -1117,6 +1251,9 @@ input[type="range"]::-webkit-slider-thumb { -webkit-appearance: none; width: 28p
       ringMinutes: dd.ringMinutes, pauseUntil: "",
       lockEnabled: dd.lockEnabled, lockAutoMin: dd.lockAutoMin,
       motion: dd.motion, talk: dd.talk, location: null,
+      sleep: { sound: "rain", level: 1, minutes: 30, auto: false },
+      routinesOn: true, routineLead: 45, routineMorning: 90, routines: defaultRoutines(),
+      events: [], festCountdown: true,
       alarms: defaultAlarms(), customHolidays: []
     };
   }
@@ -1153,6 +1290,34 @@ input[type="range"]::-webkit-slider-thumb { -webkit-appearance: none; width: 28p
     }
     return out;
   }
+  var MAX_STEPS = 6;
+  function step(e, t) { return { id: newId(), e: e, t: t }; }
+  function defaultRoutines() {
+    return {
+      morning: [step("🛏️", "Make bed"), step("🦷", "Brush teeth"), step("👕", "Get dressed"), step("🥣", "Breakfast"), step("🎒", "School bag")],
+      bedtime: [step("🛁", "Bath"), step("👕", "Pyjamas on"), step("🦷", "Brush teeth"), step("📖", "Story"), step("🌙", "Lights out")]
+    };
+  }
+  function normSteps(list, dflt) {
+    if (!list || typeof list.length !== "number") return dflt;
+    var out = [], i, x;
+    for (i = 0; i < list.length && out.length < MAX_STEPS; i++) {
+      x = list[i];
+      if (!x || typeof x !== "object" || typeof x.t !== "string") continue;
+      out.push({ id: typeof x.id === "string" && x.id ? x.id : newId(), e: typeof x.e === "string" && x.e ? x.e : "⭐", t: x.t.slice(0, 24) });
+    }
+    return out;
+  }
+  function normEvents(list) {
+    var out = [], i, x;
+    if (!list || typeof list.length !== "number") return out;
+    for (i = 0; i < list.length; i++) {
+      x = list[i];
+      if (!x || typeof x !== "object" || typeof x.name !== "string" || !isYMD(x.date)) continue;
+      out.push({ id: typeof x.id === "string" && x.id ? x.id : newId(), name: x.name.slice(0, 30), date: x.date, e: typeof x.e === "string" && x.e ? x.e : "🎉" });
+    }
+    return out;
+  }
   function intIn(v, lo, hi, dflt) { v = parseInt(v, 10); return isNaN(v) ? dflt : Math.max(lo, Math.min(hi, v)); }
   function loadState() {
     var base = defaultState(), dd = SEED.defaults, saved = null, p, k;
@@ -1186,6 +1351,20 @@ input[type="range"]::-webkit-slider-thumb { -webkit-appearance: none; width: 28p
     base.lockAutoMin = intIn(base.lockAutoMin, 0, 5, 0);
     if (!isYMD(base.pauseUntil)) base.pauseUntil = "";
     base.motion = base.motion !== false;
+    var dr = defaultRoutines(), rr = (base.routines && typeof base.routines === "object") ? base.routines : {};
+    base.routines = { morning: normSteps(rr.morning, dr.morning), bedtime: normSteps(rr.bedtime, dr.bedtime) };
+    base.routinesOn = base.routinesOn !== false;
+    base.routineLead = [30, 45, 60].indexOf(+base.routineLead) >= 0 ? +base.routineLead : 45;
+    base.routineMorning = [60, 90, 120].indexOf(+base.routineMorning) >= 0 ? +base.routineMorning : 90;
+    base.events = normEvents(base.events);
+    base.festCountdown = base.festCountdown !== false;
+    var sl = (base.sleep && typeof base.sleep === "object") ? base.sleep : {};
+    base.sleep = {
+      sound: SLEEP_IDS.indexOf(sl.sound) >= 0 ? sl.sound : "rain",
+      level: [0, 1, 2].indexOf(+sl.level) >= 0 ? +sl.level : 1,
+      minutes: [15, 30, 60, 0].indexOf(+sl.minutes) >= 0 ? +sl.minutes : 30,
+      auto: sl.auto === true
+    };
     base.talk = base.talk === true;
     var loc = base.location;
     base.location = (loc && typeof loc === "object" && typeof loc.name === "string" && isFinite(loc.lat) && isFinite(loc.lng) &&
@@ -1200,7 +1379,8 @@ input[type="range"]::-webkit-slider-thumb { -webkit-appearance: none; width: 28p
    * alarms already rang, and when the clock last ticked (to catch up on
    * alarms missed while the page was paused, and to report pauses). */
   var RT_KEY = STORE_KEY + ".rt";
-  var rt = { snoozeUntil: 0, snoozeLabel: "", snoozeSound: "chimes", fired: {}, lastTick: 0, lastGap: null, timerEnd: 0, timerTotal: 0, timerLabel: "" };
+  var rt = { snoozeUntil: 0, snoozeLabel: "", snoozeSound: "chimes", fired: {}, lastTick: 0, lastGap: null, timerEnd: 0, timerTotal: 0, timerLabel: "",
+    routine: null, routineHist: { morning: [], bedtime: [] } };
   function loadRuntime() {
     try {
       var raw = window.localStorage.getItem(RT_KEY), p = raw ? JSON.parse(raw) : null;
@@ -1214,6 +1394,10 @@ input[type="range"]::-webkit-slider-thumb { -webkit-appearance: none; width: 28p
         rt.timerEnd = +p.timerEnd || 0;
         rt.timerTotal = +p.timerTotal || 0;
         rt.timerLabel = typeof p.timerLabel === "string" ? p.timerLabel : "";
+        rt.routine = (p.routine && typeof p.routine === "object" && p.routine.done && isYMD(p.routine.date)) ? p.routine : null;
+        if (p.routineHist && typeof p.routineHist === "object") {
+          rt.routineHist = { morning: (p.routineHist.morning || []).slice(-60), bedtime: (p.routineHist.bedtime || []).slice(-60) };
+        }
       }
     } catch (e) {}
   }
@@ -1515,7 +1699,11 @@ input[type="range"]::-webkit-slider-thumb { -webkit-appearance: none; width: 28p
       day = nowMinutes(now) >= wakeMinutesFor(now) ? addDays(now, 1) : now;
       out += " It's still night time. Stay in bed until " + spokenHHMM(hhmmOf(wakeMinutesFor(day))) + ".";
     } else if (mode === "wake") out += " Good morning" + namePart() + "! It's time to get up.";
-    else out += todayPhrase(now);
+    else {
+      out += todayPhrase(now);
+      var cd = nextCountdown(now);
+      if (cd && cd.n >= 1 && cd.n <= 14) out += " " + (cd.n === 1 ? "One more sleep" : cd.n + " sleeps") + " until " + cd.name + "!";
+    }
     return out;
   }
   function alarmPhrase() {
@@ -1556,6 +1744,7 @@ input[type="range"]::-webkit-slider-thumb { -webkit-appearance: none; width: 28p
     if (m === "night") $("nightNoteText").textContent = nightNoteText(now);
     if (m === "wake") $("wakeNoteText").textContent = "Good morning" + (state.name ? ", " + state.name : "") + "! Time to get up";
     if (m !== mode) { mode = m; renderClock(true); }
+    renderRoutine();
   }
   function applyModeLater(ms) {
     if (modeTimer) clearTimeout(modeTimer);
@@ -1737,6 +1926,8 @@ input[type="range"]::-webkit-slider-thumb { -webkit-appearance: none; width: 28p
       }
     } else { $("cardSun").hidden = true; }
 
+    renderCountdown(now);
+
     var todayHol = holidayOn(now);
     if (todayHol) { $("festivalValue").textContent = todayHol.name; $("cardFestival").hidden = false; }
     else { $("cardFestival").hidden = true; }
@@ -1748,7 +1939,7 @@ input[type="range"]::-webkit-slider-thumb { -webkit-appearance: none; width: 28p
         $("birthdayValue").textContent = "Happy birthday";
         $("birthdaySub").textContent = state.name ? (state.name + "!") : "Have a wonderful day";
       } else {
-        $("birthdayValue").textContent = "In " + bd.days + (bd.days === 1 ? " day" : " days");
+        $("birthdayValue").textContent = bd.days === 1 ? "1 more sleep" : bd.days + " sleeps";
         $("birthdaySub").textContent = shortDate(bd.date);
       }
     } else { $("cardBirthday").hidden = true; }
@@ -1839,7 +2030,7 @@ input[type="range"]::-webkit-slider-thumb { -webkit-appearance: none; width: 28p
       alarmEl.setAttribute("playsinline", "");
       alarmEl.setAttribute("webkit-playsinline", "");
       alarmEl.preload = "auto";
-      alarmEl.addEventListener("ended", function () { previewing = false; });
+      alarmEl.addEventListener("ended", function () { previewing = false; if (sleep) playSleepAudio(); });
     }
     return alarmEl;
   }
@@ -1853,7 +2044,7 @@ input[type="range"]::-webkit-slider-thumb { -webkit-appearance: none; width: 28p
     initAudio();
     if (state.talk) unlockSpeech();
     requestWakeLock();
-    if (audioUnlocked || unlocking || ringing || previewing) return;
+    if (audioUnlocked || unlocking || ringing || previewing || sleep) return;
     var el = audioEl(), p;
     unlocking = true;
     el.loop = false; el.src = getSilentUri();
@@ -1868,7 +2059,7 @@ input[type="range"]::-webkit-slider-thumb { -webkit-appearance: none; width: 28p
     previewing = true;
     el.loop = false; el.src = soundUri(kind, 1);
     try { p = el.play(); } catch (e) { previewing = false; return; }
-    if (p && p.then) p.then(function () { audioUnlocked = true; refreshSoundPill(); }, function () { previewing = false; });
+    if (p && p.then) p.then(function () { audioUnlocked = true; refreshSoundPill(); }, function () { previewing = false; if (sleep) playSleepAudio(); });
   }
   function playLevel(kind, lvl) {
     var el = audioEl(), p;
@@ -1884,7 +2075,7 @@ input[type="range"]::-webkit-slider-thumb { -webkit-appearance: none; width: 28p
     fallbackTimer = setInterval(playChime, 3000);
   }
   function startSound(kind, startLevel) {
-    stopSound();
+    stopSound(true);
     previewing = false;
     soundLevel = startLevel || 0;
     playLevel(kind, soundLevel);
@@ -1894,10 +2085,13 @@ input[type="range"]::-webkit-slider-thumb { -webkit-appearance: none; width: 28p
       if (!fallbackTimer) playLevel(kind, soundLevel);
     }, LEVEL_STEP_MS);
   }
-  function stopSound() {
+  // Pass true when another sound takes over straight away; otherwise a
+  // sleep sound that was playing carries on.
+  function stopSound(handOver) {
     if (rampTimer) { clearInterval(rampTimer); rampTimer = null; }
     if (fallbackTimer) { clearInterval(fallbackTimer); fallbackTimer = null; }
     if (alarmEl) { try { alarmEl.pause(); alarmEl.currentTime = 0; } catch (e) {} alarmEl.loop = false; }
+    if (!handOver && sleep) playSleepAudio();
   }
   function playTone(freq, when, dur, vol) {
     var o = audioCtx.createOscillator(), g = audioCtx.createGain();
@@ -1918,9 +2112,367 @@ input[type="range"]::-webkit-slider-thumb { -webkit-appearance: none; width: 28p
   function refreshSoundPill() {
     var need = false, i, al;
     if (!audioUnlocked) {
+      need = !!state.sleep.auto;
       for (i=0;i<state.alarms.length;i++) { al = state.alarms[i]; if (al.on && al.sound !== "silent") { need = true; break; } }
     }
     $("soundPill").hidden = !need;
+  }
+
+  /* ── sleep sounds ────────────────────────────────────────────────────
+   * Rain, ocean, fan and soft noise, generated on the iPad as 16-second
+   * loops whose end is cross-faded into the start, so the loop has no seam.
+   * They play through the same <audio> element as the alarms: iOS has
+   * played only one media element at a time for much of its history, and
+   * an alarm should cut in anyway. A real alarm ends the sleep sound; a
+   * timer, test alarm or sound preview pauses it and it carries on after.
+   * iOS ignores element.volume, so each volume is its own pre-scaled clip,
+   * and "fading out" means dropping one volume step for the last 2 minutes. */
+  var SLEEP_IDS = ["rain", "ocean", "fan", "noise"];
+  var SLEEP_NAMES = { rain: "Rain", ocean: "Ocean", fan: "Fan", noise: "Soft noise" };
+  var SLEEP_SR = 16000, SLEEP_LEN_S = 16, SLEEP_GAINS = [0.22, 0.45, 0.8], SLEEP_STEP_MS = 2 * 60000;
+  var sleepSamples = {}, sleepUris = {}, sleep = null, sleepBlocked = false;
+  function sleepSynth(kind) {
+    if (sleepSamples[kind]) return sleepSamples[kind];
+    var len = SLEEP_SR * SLEEP_LEN_S, F = SLEEP_SR / 2, n = len + F, swell = SLEEP_SR * 8, buf = new Float32Array(n);
+    var b0 = 0, b1 = 0, b2 = 0, brown = 0, drop = 0, hp = 0, prev = 0, peak = 0, i, w, pink, x, env, a, out;
+    for (i = 0; i < n; i++) {
+      w = Math.random() * 2 - 1;
+      b0 = 0.99765 * b0 + w * 0.0990460; b1 = 0.96300 * b1 + w * 0.2965164; b2 = 0.57000 * b2 + w * 1.0526913;
+      pink = (b0 + b1 + b2 + w * 0.1848) * 0.2;
+      brown = (brown + 0.02 * w) / 1.02;
+      if (kind === "rain") {
+        // pink-noise hiss + many tiny high "drops" + a little low rumble
+        if (Math.random() < 60 / SLEEP_SR) drop = Math.max(drop, 0.3 + Math.random() * 0.7);
+        drop *= 0.996;
+        x = (Math.random() * 2 - 1) * drop;
+        hp = 0.92 * (hp + x - prev); prev = x;
+        buf[i] = pink * 0.55 + hp * 0.5 + brown * 1.2;
+      } else if (kind === "ocean") {
+        // deep noise that swells and falls every 8 seconds
+        env = 0.5 - 0.5 * Math.cos(2 * Math.PI * (i % swell) / swell);
+        buf[i] = (brown * 3 + pink * 0.6) * (0.2 + 0.8 * Math.pow(env, 1.6));
+      } else if (kind === "fan") {
+        buf[i] = brown * 3.2 + pink * 0.15;
+      } else {
+        buf[i] = pink * 0.9;
+      }
+    }
+    for (i = 0; i < F; i++) { a = i / F; buf[i] = buf[i] * Math.sqrt(a) + buf[len + i] * Math.sqrt(1 - a); }
+    out = buf.subarray(0, len);
+    for (i = 0; i < len; i++) if (Math.abs(out[i]) > peak) peak = Math.abs(out[i]);
+    for (i = 0; i < len; i++) out[i] = out[i] * 0.9 / peak;
+    sleepSamples[kind] = out;
+    return out;
+  }
+  function sleepUri(kind, lvl) {
+    var k = kind + lvl;
+    if (!sleepUris[k]) sleepUris[k] = wavUri(sleepSynth(kind), SLEEP_GAINS[lvl], SLEEP_SR);
+    return sleepUris[k];
+  }
+  function playSleepAudio() {
+    if (!sleep || ringing) return;
+    var el = audioEl(), p;
+    previewing = false;
+    el.loop = true; el.src = sleepUri(sleep.kind, sleep.cur);
+    try { p = el.play(); } catch (e) { p = null; }
+    if (p && p.then) p.then(function () { sleepBlocked = false; audioUnlocked = true; refreshSoundPill(); renderSleep(); },
+      function () { if (sleep) { sleepBlocked = true; renderSleep(); } });
+  }
+  function sleepEndFor(minutes) {
+    if (minutes > 0) return Date.now() + minutes * 60000;
+    var now = new Date(), day = nowMinutes(now) >= wakeMinutesFor(now) ? addDays(now, 1) : now, wm = wakeMinutesFor(day);
+    return new Date(day.getFullYear(), day.getMonth(), day.getDate(), Math.floor(wm / 60), wm % 60).getTime();
+  }
+  function startSleep() {
+    var s = state.sleep;
+    sleep = { kind: s.sound, level: s.level, cur: s.level, endMs: sleepEndFor(s.minutes) };
+    sleepBlocked = false;
+    playSleepAudio(); renderSleep();
+  }
+  function stopSleep() {
+    if (!sleep) return;
+    sleep = null; sleepBlocked = false;
+    if (!ringing && !previewing && alarmEl) { try { alarmEl.pause(); } catch (e) {} alarmEl.loop = false; }
+    renderSleep();
+  }
+  function checkSleep(nowMs) {
+    if (!sleep || ringing) return;
+    if (nowMs >= sleep.endMs) { stopSleep(); return; }
+    if (sleep.cur === sleep.level && sleep.level > 0 && sleep.endMs - nowMs <= SLEEP_STEP_MS) { sleep.cur = sleep.level - 1; playSleepAudio(); }
+  }
+  function renderSleep() {
+    var btn = $("sleepBtn"), i, tiles = $("sleepGrid").querySelectorAll(".tbtn"), left;
+    btn.classList.toggle("is-running", !!sleep);
+    left = sleep ? Math.max(0, Math.ceil((sleep.endMs - Date.now()) / 60000)) : 0;
+    $("sleepBtnTxt").textContent = sleep ? (state.sleep.minutes === 0 ? "On" : left + "m") : "";
+    for (i = 0; i < tiles.length; i++) tiles[i].classList.toggle("is-on", tiles[i].getAttribute("data-s") === state.sleep.sound);
+    segSet("sleepLevel", String(state.sleep.level));
+    segSet("sleepMins", String(state.sleep.minutes));
+    setSwitch($("sleepAuto"), state.sleep.auto);
+    $("sleepPlay").textContent = sleep ? "Stop" : "Play";
+    $("sleepPlay").className = "btn sleep-play " + (sleep ? "btn-danger" : "btn-primary");
+    var st = "";
+    if (sleep && sleepBlocked) st = "The iPad blocked the sound. Tap Play again.";
+    else if (sleep) st = "Playing " + SLEEP_NAMES[sleep.kind].toLowerCase() + (state.sleep.minutes === 0 ? " until " : " · stops at ") + clockOf(new Date(sleep.endMs));
+    else if (state.sleep.auto) st = "Starts by itself at " + formatClock(state.bedtime) + ".";
+    if ($("sleepStatus").textContent !== st) $("sleepStatus").textContent = st;
+  }
+  function openSleep() { lastInteract = Date.now(); renderSleep(); $("sleepView").classList.add("is-open"); syncPanels(); }
+  function closeSleep() { $("sleepView").classList.remove("is-open"); syncPanels(); }
+  // Settings changed while playing apply straight away.
+  function sleepSettingsChanged(restart) {
+    saveState();
+    if (sleep && restart) startSleep();
+    renderSleep(); refreshSoundPill();
+  }
+  function bindSleep() {
+    var tiles = $("sleepGrid").querySelectorAll(".tbtn"), i;
+    for (i = 0; i < tiles.length; i++) { (function (b) { b.addEventListener("click", function () {
+      state.sleep.sound = b.getAttribute("data-s"); sleepSettingsChanged(true);
+    }); })(tiles[i]); }
+    segBind("sleepLevel", function (v) { state.sleep.level = parseInt(v, 10) || 0; sleepSettingsChanged(true); });
+    segBind("sleepMins", function (v) {
+      state.sleep.minutes = parseInt(v, 10) || 0;
+      if (sleep) { sleep.endMs = sleepEndFor(state.sleep.minutes); sleep.cur = sleep.level; }
+      sleepSettingsChanged(false);
+    });
+    $("sleepAuto").addEventListener("click", function () { state.sleep.auto = !state.sleep.auto; sleepSettingsChanged(false); });
+    $("sleepPlay").addEventListener("click", function () { if (sleep && !sleepBlocked) stopSleep(); else startSleep(); });
+    $("sleepBtn").addEventListener("click", openSleep);
+    $("sleepHide").addEventListener("click", closeSleep);
+  }
+
+  /* ── routine cards ───────────────────────────────────────────────────
+   * Picture checklists that appear on their own: the bedtime routine in
+   * the run-up to bedtime, the morning routine after wake-up. Ticks are
+   * kept per day; finishing a routine shows stars and counts a streak of
+   * days in a row. Only emoji that exist on iOS 12 are offered. */
+  var ROUTINE_EMOJI = ["🛏️", "🦷", "👕", "🥣", "🎒", "👟", "💧", "🧼", "🛁", "🚿", "📖", "📚", "✏️", "🌙", "🧸", "🧦",
+    "🥛", "🍎", "🍌", "🚽", "🧹", "🎹", "⚽", "🙏", "💊", "😴", "🤗", "⭐"];
+  var EVENT_EMOJI = ["🎉", "🎂", "🎁", "🎈", "🎊", "🎆", "🎇", "🎄", "🌙", "🎨", "🐘", "🌾", "🎀", "🏹", "✈️", "🚗",
+    "🚂", "🏖️", "⛰️", "👵", "👴", "👪", "🏫", "⚽", "🎪", "🦁", "🐶", "⭐"];
+  var ROUTINE_DONE_SHOW_MS = 5 * 60000, PREVIEW_ROUTINE_MS = 2 * 60000;
+  var routinePreview = null, routineShown = "";
+  var TICK_SVG = '<svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="3.4" stroke-linecap="round" stroke-linejoin="round"><path d="M5 12.5l4.5 4.5L19 7.5"></path></svg>';
+  function todayRecord() {
+    var key = keyOf(new Date());
+    if (!rt.routine || rt.routine.date !== key) rt.routine = { date: key, done: { morning: {}, bedtime: {} }, doneAt: {} };
+    if (!rt.routine.doneAt) rt.routine.doneAt = {};
+    return rt.routine;
+  }
+  function routineRec() { return routinePreview ? routinePreview.rec : todayRecord(); }
+  function activeRoutine(now) {
+    if (routinePreview) return state.routines[routinePreview.kind].length ? routinePreview.kind : "";
+    if (!state.routinesOn || mode === "night") return "";
+    var m = nowMinutes(now), bed = minutesOf(state.bedtime), wake = wakeMinutesFor(now), k = "";
+    if (m >= bed - state.routineLead && m < bed) k = "bedtime";
+    else if (m >= wake && m < wake + state.routineMorning) k = "morning";
+    if (!k || !state.routines[k].length) return "";
+    var at = todayRecord().doneAt[k];
+    return (at && Date.now() - at > ROUTINE_DONE_SHOW_MS) ? "" : k;
+  }
+  function streak(k) {
+    var h = rt.routineHist[k] || [], d = new Date(), n = 0;
+    if (h.indexOf(keyOf(d)) < 0) d = addDays(d, -1);
+    while (h.indexOf(keyOf(d)) >= 0) { n++; d = addDays(d, -1); }
+    return n;
+  }
+  function renderRoutine() {
+    var k = activeRoutine(new Date()), box = $("routine"), steps, rec, tiles, i, n = 0, html, sig;
+    document.body.classList.toggle("has-routine", !!k);
+    box.hidden = !k;
+    if (!k) { routineShown = ""; return; }
+    steps = state.routines[k]; rec = routineRec();
+    sig = k + "|" + (routinePreview ? "p" : "") + steps.map(function (x) { return x.id + x.e + x.t; }).join("|");
+    if (sig !== routineShown) {
+      html = "";
+      for (i = 0; i < steps.length; i++) {
+        html += '<button class="rstep" type="button" data-id="' + esc(steps[i].id) + '"><span class="rstep-tick">' + TICK_SVG + '</span><span class="rstep-emo">' +
+          esc(steps[i].e) + '</span><span class="rstep-txt">' + esc(steps[i].t) + '</span></button>';
+      }
+      $("routineSteps").innerHTML = html;
+      routineShown = sig;
+    }
+    tiles = $("routineSteps").querySelectorAll(".rstep");
+    for (i = 0; i < tiles.length; i++) {
+      var on = !!rec.done[k][tiles[i].getAttribute("data-id")];
+      tiles[i].classList.toggle("is-done", on);
+      if (on) n++;
+    }
+    $("routineTitle").textContent = (k === "morning" ? "Morning routine" : "Bedtime routine") + (routinePreview ? " (trying it)" : "");
+    $("routineCount").textContent = n + " of " + steps.length;
+    var all = n === steps.length, st = routinePreview ? 0 : streak(k);
+    box.classList.toggle("is-done", all);
+    $("routineDoneText").textContent = "⭐ All done!" + (st >= 2 ? " " + st + " days in a row" : "");
+  }
+  function burst() {
+    var b = $("burst"), html = "", i, spans;
+    for (i = 0; i < 10; i++) html += "<span>⭐</span>";
+    b.innerHTML = html;
+    spans = b.querySelectorAll("span");
+    void b.offsetWidth;
+    for (i = 0; i < spans.length; i++) {
+      var ang = (i / spans.length) * 2 * Math.PI, r = 18 + Math.random() * 14;
+      spans[i].style.transform = "translate3d(" + (Math.cos(ang) * r).toFixed(1) + "vmin," + (Math.sin(ang) * r * 0.7 - 6).toFixed(1) + "vmin,0) scale(1.3)";
+      spans[i].style.opacity = "0";
+    }
+    setTimeout(function () { b.innerHTML = ""; }, 1300);
+  }
+  function ding(all) {
+    initAudio();
+    if (!audioCtx) return;
+    try {
+      if (all) { playChime(); return; }
+      var t = audioCtx.currentTime + 0.02;
+      playTone(880, t, 0.35, 0.25); playTone(1318.5, t + 0.09, 0.45, 0.22);
+    } catch (e) {}
+  }
+  function onRoutineTap(e) {
+    var t = e.target.closest ? e.target.closest(".rstep") : null;
+    if (!t) return;
+    var k = activeRoutine(new Date());
+    if (!k) return;
+    var rec = routineRec(), id = t.getAttribute("data-id"), steps = state.routines[k], i, n = 0;
+    if (rec.done[k][id]) { delete rec.done[k][id]; delete rec.doneAt[k]; }
+    else {
+      rec.done[k][id] = 1;
+      t.classList.remove("pop"); void t.offsetWidth; t.classList.add("pop");
+    }
+    for (i = 0; i < steps.length; i++) if (rec.done[k][steps[i].id]) n++;
+    var all = n === steps.length;
+    if (rec.done[k][id]) {
+      ding(all);
+      if (all) {
+        rec.doneAt[k] = Date.now();
+        if (!routinePreview) {
+          var h = rt.routineHist[k] || (rt.routineHist[k] = []), key = keyOf(new Date());
+          if (h.indexOf(key) < 0) h.push(key);
+          if (h.length > 60) h.splice(0, h.length - 60);
+        }
+        burst();
+        if (state.talk) say("All done! Great job" + namePart() + "!");
+      }
+    }
+    if (!routinePreview) saveRuntime();
+    renderRoutine();
+  }
+  function bindRoutine() { $("routineSteps").addEventListener("click", onRoutineTap); }
+
+  /* ── "sleeps until" countdowns ─────────────────────────────────────── */
+  var FEST_DAYS = 21;
+  function festivalEmoji(name) {
+    if (/diwali|deepavali/i.test(name)) return "🎆";
+    if (/holi\b/i.test(name)) return "🎨";
+    if (/christmas/i.test(name)) return "🎄";
+    if (/id-ul|eid|muharram|milad/i.test(name)) return "🌙";
+    if (/ganesh/i.test(name)) return "🐘";
+    if (/dussehra|navratri/i.test(name)) return "🏹";
+    if (/raksha/i.test(name)) return "🎀";
+    if (/pongal|sankranti|onam|vaisakhi/i.test(name)) return "🌾";
+    return "🎉";
+  }
+  function nextCountdown(now) {
+    var best = null, i, ev, n, up;
+    for (i = 0; i < state.events.length; i++) {
+      ev = state.events[i]; n = daysBetween(now, parseYMD(ev.date));
+      if (n < 0 || n > 120) continue;
+      if (!best || n < best.n) best = { n: n, name: ev.name, e: ev.e };
+    }
+    if (state.festCountdown) {
+      up = upcomingHolidays(addDays(now, 1), 1, false);
+      if (up.length) {
+        n = daysBetween(now, up[0].date);
+        if (n <= FEST_DAYS && (!best || n < best.n)) best = { n: n, name: up[0].name, e: festivalEmoji(up[0].name) };
+      }
+    }
+    return best;
+  }
+  function renderCountdown(now) {
+    var cd = nextCountdown(now), card = $("cardCount");
+    card.hidden = !cd;
+    if (!cd) return;
+    card.classList.toggle("is-festival", cd.n <= 1);
+    $("countEmo").textContent = cd.e;
+    $("countKicker").textContent = cd.n === 0 ? "Today" : "Countdown";
+    $("countValue").textContent = cd.n === 0 ? cd.name : (cd.n === 1 ? "1 more sleep" : cd.n + " sleeps");
+    $("countSub").textContent = cd.n === 0 ? "It's today!" : "until " + cd.name;
+  }
+
+  /* ── routine & countdown settings ─────────────────────────────────── */
+  function emojiOptions(list, cur) {
+    var h = "", i, has = false;
+    for (i = 0; i < list.length; i++) { h += "<option" + (list[i] === cur ? " selected" : "") + ">" + list[i] + "</option>"; if (list[i] === cur) has = true; }
+    if (cur && !has) h = "<option selected>" + esc(cur) + "</option>" + h;
+    return h;
+  }
+  function routinesChanged() { saveState(); routineShown = ""; renderRoutine(); }
+  function renderSteps(k) {
+    var wrap = $(k === "morning" ? "stepsMorning" : "stepsBedtime"), steps = state.routines[k], html = "", i, rows;
+    for (i = 0; i < steps.length; i++) {
+      html += '<div class="steprow" data-i="' + i + '"><select class="emo-pick" aria-label="Picture">' + emojiOptions(ROUTINE_EMOJI, steps[i].e) + '</select>' +
+        '<input type="text" class="step-label" maxlength="24" value="' + esc(steps[i].t) + '" aria-label="Step">' +
+        '<button class="btn btn-quiet step-up" type="button" aria-label="Move up"' + (i === 0 ? " disabled" : "") + '>↑</button>' +
+        '<button class="btn btn-danger step-del" type="button">Del</button></div>';
+    }
+    wrap.innerHTML = html || '<div class="row-help">No steps, so this routine won\'t show.</div>';
+    rows = wrap.querySelectorAll(".steprow");
+    for (i = 0; i < rows.length; i++) { (function (row) {
+      var idx = parseInt(row.getAttribute("data-i"), 10);
+      row.querySelector(".emo-pick").addEventListener("change", function (e) { steps[idx].e = e.target.value; routinesChanged(); });
+      row.querySelector(".step-label").addEventListener("change", function (e) { steps[idx].t = e.target.value.slice(0, 24); routinesChanged(); });
+      row.querySelector(".step-up").addEventListener("click", function () { var x = steps[idx]; steps[idx] = steps[idx - 1]; steps[idx - 1] = x; routinesChanged(); renderSteps(k); });
+      row.querySelector(".step-del").addEventListener("click", function () { steps.splice(idx, 1); routinesChanged(); renderSteps(k); });
+    })(rows[i]); }
+    $(k === "morning" ? "addStepMorning" : "addStepBedtime").disabled = steps.length >= MAX_STEPS;
+  }
+  function renderEvents() {
+    var wrap = $("eventList"), html = "", i, rows, ev;
+    for (i = 0; i < state.events.length; i++) {
+      ev = state.events[i];
+      html += '<div class="steprow" data-i="' + i + '"><select class="emo-pick" aria-label="Picture">' + emojiOptions(EVENT_EMOJI, ev.e) + '</select>' +
+        '<input type="text" class="ev-name" maxlength="30" value="' + esc(ev.name) + '" aria-label="Name">' +
+        '<input type="date" class="ev-date" value="' + esc(ev.date) + '" aria-label="Date">' +
+        '<button class="btn btn-danger ev-del" type="button">Del</button></div>';
+    }
+    wrap.innerHTML = html;
+    rows = wrap.querySelectorAll(".steprow");
+    for (i = 0; i < rows.length; i++) { (function (row) {
+      var idx = parseInt(row.getAttribute("data-i"), 10);
+      row.querySelector(".emo-pick").addEventListener("change", function (e) { state.events[idx].e = e.target.value; saveState(); renderCards(); });
+      row.querySelector(".ev-name").addEventListener("change", function (e) { state.events[idx].name = e.target.value.slice(0, 30); saveState(); renderCards(); });
+      row.querySelector(".ev-date").addEventListener("change", function (e) { if (!isYMD(e.target.value)) return; state.events[idx].date = e.target.value; saveState(); renderCards(); });
+      row.querySelector(".ev-del").addEventListener("click", function () { state.events.splice(idx, 1); saveState(); renderEvents(); renderCards(); });
+    })(rows[i]); }
+  }
+  function populateRoutineSettings() {
+    setSwitch($("set-routines"), state.routinesOn);
+    segSet("set-rlead", String(state.routineLead));
+    segSet("set-rmorning", String(state.routineMorning));
+    setSwitch($("set-festcd"), state.festCountdown);
+    renderSteps("morning"); renderSteps("bedtime"); renderEvents();
+    $("newEventEmoji").innerHTML = emojiOptions(EVENT_EMOJI, "🎉");
+  }
+  function tryRoutine(k) {
+    closeSettings();
+    routinePreview = { kind: k, until: Date.now() + PREVIEW_ROUTINE_MS, rec: { done: { morning: {}, bedtime: {} }, doneAt: {} } };
+    routineShown = ""; renderRoutine();
+  }
+  function bindRoutineSettings() {
+    $("set-routines").addEventListener("click", function () { state.routinesOn = !state.routinesOn; setSwitch(this, state.routinesOn); routinesChanged(); });
+    segBind("set-rlead", function (v) { state.routineLead = parseInt(v, 10) || 45; routinesChanged(); });
+    segBind("set-rmorning", function (v) { state.routineMorning = parseInt(v, 10) || 90; routinesChanged(); });
+    $("addStepMorning").addEventListener("click", function () { if (state.routines.morning.length < MAX_STEPS) { state.routines.morning.push(step("⭐", "New step")); routinesChanged(); renderSteps("morning"); } });
+    $("addStepBedtime").addEventListener("click", function () { if (state.routines.bedtime.length < MAX_STEPS) { state.routines.bedtime.push(step("⭐", "New step")); routinesChanged(); renderSteps("bedtime"); } });
+    $("tryMorning").addEventListener("click", function () { tryRoutine("morning"); });
+    $("tryBedtime").addEventListener("click", function () { tryRoutine("bedtime"); });
+    $("set-festcd").addEventListener("click", function () { state.festCountdown = !state.festCountdown; setSwitch(this, state.festCountdown); saveState(); renderCards(); });
+    $("addEventBtn").addEventListener("click", function () {
+      var n = $("newEventName").value, d = $("newEventDate").value;
+      if (!n || !isYMD(d)) return;
+      state.events.push({ id: newId(), name: n.slice(0, 30), date: d, e: $("newEventEmoji").value || "🎉" });
+      $("newEventName").value = ""; $("newEventDate").value = "";
+      saveState(); renderEvents(); renderCards();
+    });
   }
 
   /* ── alarms engine ───────────────────────────────────────────────────
@@ -1961,7 +2513,8 @@ input[type="range"]::-webkit-slider-thumb { -webkit-appearance: none; width: 28p
     }
   }
   function fireAlarm(al) {
-    stopSound();
+    if (!al.test && !al.timer) stopSleep();
+    stopSound(true);
     ringing = al; ringStartMs = Date.now();
     if (!$("alarmOverlay").classList.contains("is-open")) alarmLastFocus = document.activeElement;
     $("alarmKicker").textContent = al.timer ? "Timer" : (al.test ? "Test alarm" : (al.snooze ? "Snooze is over" : "Wake up"));
@@ -1977,10 +2530,11 @@ input[type="range"]::-webkit-slider-thumb { -webkit-appearance: none; width: 28p
     var d = $("dismissBtn"); if (d && d.focus) { try { d.focus(); } catch (e) {} }
   }
   function stopAlarm() {
+    ringing = null;
     stopSound();
     if (synthOK) { try { window.speechSynthesis.cancel(); } catch (e) {} }
     $("alarmOverlay").classList.remove("is-open");
-    ringing = null; applyMode();
+    applyMode();
     if (alarmLastFocus && alarmLastFocus.focus) { try { alarmLastFocus.focus(); } catch (e) {} }
     alarmLastFocus = null;
   }
@@ -2049,12 +2603,13 @@ input[type="range"]::-webkit-slider-thumb { -webkit-appearance: none; width: 28p
     if (timerRunning() && nowMs >= rt.timerEnd) timerDone(nowMs - rt.timerEnd > TIMER_CATCHUP_MS);
     else if (timerRunning() || isOpen("timerView")) renderTimer(false);
   }
+  function syncPanels() { document.body.classList.toggle("panel-open", isOpen("timerView") || isOpen("sleepView")); }
   function openTimer() {
     lastInteract = Date.now();
     renderTimer(true);
-    $("timerView").classList.add("is-open");
+    $("timerView").classList.add("is-open"); syncPanels();
   }
-  function closeTimer() { $("timerView").classList.remove("is-open"); }
+  function closeTimer() { $("timerView").classList.remove("is-open"); syncPanels(); }
   function bindTimer() {
     var i, grid = $("timerGrid").querySelectorAll(".tbtn"), chips = $("timerLabels").querySelectorAll(".chip");
     for (i = 0; i < grid.length; i++) { (function (b) { b.addEventListener("click", function () { startTimer(parseInt(b.getAttribute("data-min"), 10)); }); })(grid[i]); }
@@ -2122,6 +2677,7 @@ input[type="range"]::-webkit-slider-thumb { -webkit-appearance: none; width: 28p
     if (isOpen("lockScreen")) return $("lockScreen");
     if (isOpen("settingsSheet")) return $("settingsSheet");
     if (isOpen("timerView")) return $("timerView");
+    if (isOpen("sleepView")) return $("sleepView");
     return null;
   }
   function trapTab(e) {
@@ -2302,6 +2858,7 @@ input[type="range"]::-webkit-slider-thumb { -webkit-appearance: none; width: 28p
     });
     segBind("set-relock", function(v){ state.lockAutoMin = parseInt(v,10) || 0; saveState(); });
     bindSceneGallery();
+    bindRoutineSettings();
     if (window.matchMedia && window.matchMedia("(prefers-reduced-motion: reduce)").matches)
       $("motionHelp").textContent += " Your iPad's Reduce Motion setting is on. The clock still moves while this switch is on.";
     $("holidayHelp").textContent = SEED.note;
@@ -2321,6 +2878,7 @@ input[type="range"]::-webkit-slider-thumb { -webkit-appearance: none; width: 28p
     $("set-birthday").value = state.birthday;
     segSet("set-format", state.format12 ? "12" : "24");
     renderSceneGallery();
+    populateRoutineSettings();
     setSwitch($("set-seconds"), state.showSeconds);
     setSwitch($("set-drift"), state.driftProtect);
     setSwitch($("set-night"), state.nightMode);
@@ -2469,7 +3027,8 @@ input[type="range"]::-webkit-slider-thumb { -webkit-appearance: none; width: 28p
       return;
     }
     if (e.key === "Escape" && isOpen("settingsSheet")) { closeSettings(); e.preventDefault(); return; }
-    if (e.key === "Escape" && isOpen("timerView")) { closeTimer(); e.preventDefault(); }
+    if (e.key === "Escape" && isOpen("timerView")) { closeTimer(); e.preventDefault(); return; }
+    if (e.key === "Escape" && isOpen("sleepView")) { closeSleep(); e.preventDefault(); }
   }
   function bindLock() {
     $("keypad").addEventListener("click", function (e) {
@@ -2504,11 +3063,17 @@ input[type="range"]::-webkit-slider-thumb { -webkit-appearance: none; width: 28p
       checkAlarms(nowMs);
       checkAutoStop(nowMs);
       checkTimer(nowMs);
+      checkSleep(nowMs);
+      if (sleep || isOpen("sleepView")) renderSleep();
+      if (isOpen("sleepView") && !sleep && nowMs - lastInteract > TIMER_IDLE_MS) closeSleep();
+      if (routinePreview && nowMs >= routinePreview.until) { routinePreview = null; renderRoutine(); }
       if (isOpen("timerView") && !timerRunning() && nowMs - lastInteract > TIMER_IDLE_MS) closeTimer();
       if (minute !== lastMinuteTick) {
         lastMinuteTick = minute; applyMode(); applyScene(false); renderCards(); refreshHealth();
         var d = new Date(nowMs);
         if (state.talk && !ringing && nowMinutes(d) === minutesOf(state.bedtime) && lastBedSaid !== keyOf(d)) { lastBedSaid = keyOf(d); say(bedPhrase()); }
+        if (state.sleep.auto && !sleep && !ringing && nowMinutes(d) === minutesOf(state.bedtime)) startSleep();
+        renderRoutine();
       }
       if (nowMs - rt.lastTick >= 15000) { rt.lastTick = nowMs; saveRuntime(); }
       if (isOpen("settingsSheet") && !isOpen("lockScreen") && nowMs - lastInteract > SETTINGS_IDLE_MS) closeSettings();
@@ -2532,7 +3097,7 @@ input[type="range"]::-webkit-slider-thumb { -webkit-appearance: none; width: 28p
     lastCheckMs = (rt.lastTick && nowMs - rt.lastTick < CATCHUP_MS) ? rt.lastTick : nowMs - 1500;
     rt.lastTick = nowMs; pruneFired(); saveRuntime();
 
-    applyTheme(); applyMode(); renderClock(true); renderCards(); bindSettings(); bindLock(); bindTimer(); renderTimer(true);
+    applyTheme(); applyMode(); renderClock(true); renderCards(); bindSettings(); bindLock(); bindTimer(); renderTimer(true); bindSleep(); renderSleep(); bindRoutine(); renderRoutine();
     registerOffline();
     document.addEventListener("keydown", onKey);
     document.addEventListener("touchend", unlockAudio, true);
