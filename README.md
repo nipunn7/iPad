@@ -35,7 +35,7 @@ else. Settings are saved on that iPad.
   and you can **pause all alarms until a date** (breaks, sick days, trips).
 - **Reliability**: an alarm missed because the page was paused or reloaded
   still rings when the clock comes back, if that is within an hour. A pending
-  snooze survives a reload. Settings → Status shows whether alarm sound is
+  snooze survives a reload. The status line at the top of the clock's Settings says whether alarm sound is
   ready, whether the screen is being kept awake, and when the clock last
   stopped running.
 - **Sun times** are computed on the iPad (no internet). In testing they were
@@ -64,7 +64,7 @@ else. Settings are saved on that iPad.
   and the morning routine for 1½ hours after wake-up. Each tick goes green
   with a ding. When all are done, stars burst out with "⭐ All done! 3 days
   in a row", and with the talking clock on it says "Great job". Steps (up to
-  6, with emoji pictures that exist on iOS 12) are edited under Settings →
+  6, with emoji pictures that exist on iOS 12) are edited under the clock's Settings →
   Routines, which also has **Try it now**.
 - **"Sleeps until" countdowns**: the nearest countdown shows as a card, like
   "4 sleeps until Grandma visits", or "12 sleeps until Diwali" for festivals
@@ -82,10 +82,27 @@ else. Settings are saved on that iPad.
   keeps a copy of itself, its fonts and its icon on the iPad (`sw.js`, a
   service worker). So a reload at night still opens the clock even if the
   Wi-Fi is down. It always tries for the newest version first (waiting up to
-  4 seconds), so updates show up on the next reload. Settings → Status →
+  4 seconds), so updates show up on the next reload. The clock's Settings → More → Health →
   *Works without Wi-Fi* shows whether it's active.
 - **Parental lock**: a 4-digit PIN in front of Settings. Settings also close by
   themselves after 3 minutes without a tap.
+
+## The clock's Settings
+
+Settings (the gear, top right; hidden at night until you tap the screen)
+opens on a short home page: a **status line** that says "All good" or names
+what needs fixing, a **Test alarm** button, and six tiles, each with a
+one-line summary of what's set:
+
+- **Alarms**: one line per alarm; tap it to change the time, days, label,
+  sound or "skip school holidays". Also *ring for* and *pause all alarms*.
+- **Bedtime & morning**: bedtime, wake-up time, night face (red, amber, grey
+  or off), night brightness, the green "OK to get up" light, and a preview.
+- **Routines**: on/off, when they show, and the morning and bedtime steps.
+- **Look**: scene, clock face, 12/24-hour, seconds, moving background.
+- **Child & family**: name, birthday, talking clock, countdowns.
+- **More**: city, parental PIN lock, holidays and school days off, health
+  details (sound, screen, pauses, full screen, offline copy), reset.
 
 ## Setting up the iPad
 
@@ -107,13 +124,13 @@ wake a sleeping iPad, so most of this setup is about never letting it sleep.
    Screen**, and from then on open the clock from its new icon. It then runs
    full screen with a dark launch screen and its own icon. Two things to know:
    settings made in Safari don't carry over to the Home Screen copy (set them
-   once more there), and Settings → Status → *Full screen* says "On" when it
+   once more there), and the clock's Settings → More → Health → *Full screen* says "On" when it
    worked.
    Common reasons it still shows the bar: the icon was added from Chrome or
    another browser (only Safari can do this on iOS 12), the page was opened
    from the Files app, Drive or an email attachment instead of a web address,
    or the clock was opened from Safari's bookmarks instead of the new icon.
-   Settings → Status also shows a **Full screen now** button, but only if this
+   The same Health section also shows a **Full screen now** button, but only if this
    iPad's Safari offers that (newer iPadOS does, iOS 12 may not); it lasts
    until the page reloads.
 3. **Settings → Display & Brightness → Auto-Lock → Never.** This is the most
@@ -124,7 +141,7 @@ wake a sleeping iPad, so most of this setup is about never letting it sleep.
 5. **Tap the clock once** after opening or reloading the page. Safari only lets
    a page play sound after a tap. Until then a "Tap anywhere to turn on alarm
    sound" pill shows at the top.
-6. **Settings → Status → Test.** It rings for 20 seconds. Use the iPad's volume
+6. **The clock's Settings → Test alarm** (top of the Settings page). It rings for 20 seconds. Use the iPad's volume
    buttons while it plays to set how loud alarms will be.
 7. **Guided Access** keeps the clock in front and stops the kids leaving it:
    Settings → Accessibility → Guided Access → on, set a passcode, then open the
@@ -147,7 +164,7 @@ uses the built-in speech voices instead. What does work on that iPad:
 - **Native alarms as a backup**: *"Hey Siri, set an alarm for 7 AM."* These are
   the Clock app's alarms. They ring even if this page has stopped or the screen
   locked, which this page can't do. They are worth having on exam days, or if
-  Settings → Status ever shows a pause. Either alarm can be switched off on
+  the clock's status line ever reports a pause. Either alarm can be switched off on
   the iPad as normal.
 - **Timers**: *"Hey Siri, set a timer for 15 minutes"* for tidy-up or reading
   time.
@@ -171,8 +188,8 @@ uses the built-in speech voices instead. What does work on that iPad:
   fallback. I couldn't test Safari's audio rules or the silent switch.
   Alarms play through an `<audio>` element, which on iOS normally ignores the
   ring/silent switch (Web Audio doesn't, so it's only the fallback). Check this
-  on your iPad with **Test**, with the silent switch on. Also try **Speak**
-  under Talking clock with the switch on, because I don't know whether iOS 12
+  on your iPad with **Test**, with the silent switch on. Also switch the talking clock on (Settings → Child & family),
+  which plays a sample, with the silent switch on, because I don't know whether iOS 12
   mutes speech with the switch.
 - **iOS 12 / older iPads**: the script is written in ES5 (no `let`, arrow
   functions and so on), and everything it uses exists in iOS 12 Safari (CSS
@@ -183,14 +200,14 @@ uses the built-in speech voices instead. What does work on that iPad:
   A7-era iPad (Air 1, mini 2/3). If a scene stutters or the iPad gets warm,
   pick **Calm** or turn off Moving background.
 - **Home Screen mode** was checked by simulating it in Chromium (layout leaves
-  room for the status bar, Status reports "On"), not on an iPad. The launch
+  room for the status bar, Health reports "On"), not on an iPad. The launch
   images are sized for 768×1024-point iPads (Air 1, mini 2/3, and similar);
   other iPads show a plain launch screen.
 - **Offline copy**: tested in Chromium by stopping the web server and
   reloading. Safari supports the same feature from iOS 11.3, but I haven't
   run it on iOS 12. Safari can delete a site's saved data if the site isn't
   used for weeks. A clock that runs every day shouldn't hit that, but check
-  Status if you ever see Safari's "can't open page" error.
+  More → Health if you ever see Safari's "can't open page" error.
 - **Location**: "Use this iPad's location" only works when the page is opened
   from an `https://` address (Safari's rule). Otherwise pick a city. Only
   India's main cities are listed. Times assume the iPad's clock is set to the
@@ -206,7 +223,7 @@ uses the built-in speech voices instead. What does work on that iPad:
   the iPad draws Apple's versions.
 - **Holidays**: dated festivals are preloaded for 2026 and 2027 only. After
   that, only fixed-date ones (Republic Day, Independence Day, Gandhi Jayanti,
-  Christmas…) remain, so add new dates under Settings → Holidays. Only the 14
+  Christmas…) remain, so add new dates under the clock's Settings → More → Holidays. Only the 14
   compulsory central-government holidays count as "No school" and skip
   alarms. Regional festivals (Holi, Janmashtami, Pongal, Onam…) show on the
   clock but don't skip, because whether schools close depends on your state

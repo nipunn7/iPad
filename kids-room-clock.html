@@ -529,6 +529,39 @@ input[type="range"]::-webkit-slider-thumb { -webkit-appearance: none; width: 28p
 .hup-tag.is-off { color: var(--accent); font-weight: 900; }
 .subhead { font-size: 1.9vmin; font-weight: 900; color: var(--muted); margin: 2.4vmin 0 0.6vmin; }
 
+/* ── Settings navigation: home tiles, one page per topic ───────────── */
+.sheet-head { position: -webkit-sticky; position: sticky; top: 0; z-index: 3; background-color: var(--bg); margin: 0 -1vmin 2.4vmin; padding: 1.4vmin 1vmin; }
+.sh-side { flex: 0 0 30%; display: flex; }
+.sh-right { justify-content: flex-end; }
+.sheet-head h2 { flex: 1 1 auto; text-align: center; font-size: 3.6vmin; }
+.statusline { display: flex; align-items: center; padding: 2vmin 2.4vmin; margin-bottom: 2.4vmin; border-radius: var(--radius-lg); background-color: var(--surface); }
+.sl-lines { flex: 1 1 auto; }
+.sl { display: flex; align-items: flex-start; font-size: 2.2vmin; font-weight: 800; line-height: 1.35; }
+.sl + .sl { margin-top: 1vmin; }
+.sl-dot { flex: 0 0 auto; width: 1.6vmin; height: 1.6vmin; margin: 0.5vmin 1.4vmin 0 0; border-radius: 50%; background-color: var(--success); }
+.sl.is-bad .sl-dot { background-color: var(--danger); }
+.sl.is-warn .sl-dot { background-color: var(--warn); }
+.statusline .btn { flex: 0 0 auto; margin-left: 2vmin; }
+.tiles { display: grid; grid-template-columns: repeat(2, 1fr); grid-gap: 2vmin; gap: 2vmin; }
+@media (max-width: 560px) { .tiles { grid-template-columns: 1fr; } }
+.tile { -webkit-appearance: none; appearance: none; cursor: pointer; border: none; text-align: left; display: flex; align-items: center; min-height: 14vmin; padding: 2.4vmin; border-radius: var(--radius-lg); background-color: var(--surface); color: var(--fg); }
+.tile:active { background-color: var(--surface-2); }
+.tile:focus { outline: none; box-shadow: var(--focus-ring); }
+.tile-ico { flex: 0 0 auto; margin-right: 2vmin; font-size: 4.6vmin; line-height: 1; }
+.tile-txt { flex: 1 1 auto; min-width: 0; }
+.tile-name { display: block; font-size: 2.6vmin; font-weight: 900; }
+.tile-sum { display: block; margin-top: 0.4vmin; font-size: 1.9vmin; font-weight: 700; line-height: 1.3; color: var(--muted); }
+.chev { margin-left: 1vmin; font-size: 4.4vmin; line-height: 1; color: var(--muted); }
+/* alarms: one line each; tap the line to edit */
+.alarm-sum { -webkit-appearance: none; appearance: none; cursor: pointer; flex: 1 1 auto; min-width: 0; padding: 0; border: none; background: transparent; color: inherit; text-align: left; display: flex; flex-direction: column; }
+.alarm-sum:focus { outline: none; }
+.alarm-sum-sub { margin-top: 0.3vmin; font-size: 1.9vmin; font-weight: 700; color: var(--muted); }
+.alarm-sum-sub .alarmrow-label { font-size: inherit; margin: 0; }
+.alarmrow.is-off .alarmrow-time { color: var(--muted); }
+.alarmrow:not(.is-open) .alarm-edit { display: none; }
+.alarm-edit { margin-top: 1.6vmin; padding-top: 1.4vmin; border-top: 1px solid var(--border); }
+.alarm-edit .alarm-time-input { margin-right: 1.2vmin; }
+
 /* scene gallery */
 .tgrid { display: grid; grid-template-columns: repeat(3, 1fr); grid-gap: 2vmin; gap: 2vmin; margin: 1vmin 0 1.4vmin; }
 @media (max-width: 600px) { .tgrid { grid-template-columns: repeat(2, 1fr); } }
@@ -879,232 +912,242 @@ input[type="range"]::-webkit-slider-thumb { -webkit-appearance: none; width: 28p
 <div class="sheet" id="settingsSheet" role="dialog" aria-modal="true" aria-label="Settings">
   <div class="sheet-inner">
     <div class="sheet-head">
-      <h2>Settings</h2>
-      <button class="btn btn-primary" id="doneBtn" type="button" data-od-id="settings-done">Done</button>
+      <div class="sh-side"><button class="btn btn-quiet backbtn" id="setBack" type="button" hidden>&lsaquo; Settings</button></div>
+      <h2 id="setTitle">Settings</h2>
+      <div class="sh-side sh-right"><button class="btn btn-primary" id="doneBtn" type="button" data-od-id="settings-done">Done</button></div>
     </div>
 
-    <div class="sect">
-      <h3>Status</h3>
-      <div class="row">
-        <div><div class="row-label">Alarm sound</div><div class="row-help">Safari only plays sound after a tap. Tap the clock once each time this page is opened or reloaded.</div></div>
-        <div class="row-ctl stat" id="statSound">&mdash;</div>
+    <!-- ── Home: status line + one tile per topic ── -->
+    <div class="page" id="pg-home">
+      <div class="statusline" id="statusLine">
+        <div class="sl-lines" id="statusLines"></div>
+        <button class="btn btn-quiet" id="testAlarmBtn" type="button" data-od-id="test-alarm">Test alarm</button>
       </div>
-      <div class="row">
-        <div><div class="row-label">Screen stays on</div><div class="row-help">Alarms can only ring while this page is open and the screen is on. Set the iPad's Auto-Lock to Never.</div></div>
-        <div class="row-ctl stat" id="statWake">&mdash;</div>
+      <div class="tiles">
+        <button class="tile" type="button" data-page="alarms"><span class="tile-ico" aria-hidden="true">⏰</span><span class="tile-txt"><span class="tile-name">Alarms</span><span class="tile-sum" id="sum-alarms"></span></span><span class="chev" aria-hidden="true">&rsaquo;</span></button>
+        <button class="tile" type="button" data-page="bed"><span class="tile-ico" aria-hidden="true">🌙</span><span class="tile-txt"><span class="tile-name">Bedtime &amp; morning</span><span class="tile-sum" id="sum-bed"></span></span><span class="chev" aria-hidden="true">&rsaquo;</span></button>
+        <button class="tile" type="button" data-page="routines"><span class="tile-ico" aria-hidden="true">✅</span><span class="tile-txt"><span class="tile-name">Routines</span><span class="tile-sum" id="sum-routines"></span></span><span class="chev" aria-hidden="true">&rsaquo;</span></button>
+        <button class="tile" type="button" data-page="look"><span class="tile-ico" aria-hidden="true">🎨</span><span class="tile-txt"><span class="tile-name">Look</span><span class="tile-sum" id="sum-look"></span></span><span class="chev" aria-hidden="true">&rsaquo;</span></button>
+        <button class="tile" type="button" data-page="family"><span class="tile-ico" aria-hidden="true">👪</span><span class="tile-txt"><span class="tile-name">Child &amp; family</span><span class="tile-sum" id="sum-family"></span></span><span class="chev" aria-hidden="true">&rsaquo;</span></button>
+        <button class="tile" type="button" data-page="more"><span class="tile-ico" aria-hidden="true">⚙️</span><span class="tile-txt"><span class="tile-name">More</span><span class="tile-sum" id="sum-more"></span></span><span class="chev" aria-hidden="true">&rsaquo;</span></button>
       </div>
-      <div class="row">
-        <div><div class="row-label">Works without Wi-Fi</div><div class="row-help">Keeps a copy of the clock on this iPad, so it still opens after a reload when the Wi-Fi is down. Needs the page to be opened from an https:// address.</div></div>
-        <div class="row-ctl stat" id="statOffline">&mdash;</div>
-      </div>
-      <div class="row">
-        <div><div class="row-label">Full screen</div><div class="row-help">To hide Safari's bar: tap Safari's Share button, choose <strong>Add to Home Screen</strong>, then open the clock from its new icon. Settings made in Safari don't carry over, so set them once more there.</div></div>
-        <div class="row-ctl fsctl"><div class="stat" id="statFull">&mdash;</div><button class="btn btn-quiet" id="fsBtn" type="button" hidden>Full screen now</button></div>
-      </div>
-      <div class="row">
-        <div><div class="row-label">Clock running</div><div class="row-help" id="statRunHelp"></div></div>
-        <div class="row-ctl stat" id="statRun">&mdash;</div>
-      </div>
-      <div class="row">
-        <div><div class="row-label">Test the alarm</div><div class="row-help">Rings for 20 seconds at full strength. Set the loudness with the iPad's volume buttons while it plays.</div></div>
-        <div class="row-ctl"><button class="btn btn-quiet" id="testAlarmBtn" type="button" data-od-id="test-alarm">Test</button></div>
-      </div>
+      <div class="version" id="versionLine"></div>
     </div>
 
-    <div class="sect">
-      <h3>Alarms</h3>
-      <div id="alarmList"></div>
-      <button class="btn btn-quiet" id="addAlarmBtn" type="button" data-od-id="add-alarm">+ Add alarm</button>
-      <div class="row" style="margin-top:2vmin;">
-        <div><div class="row-label">Ring for</div><div class="row-help">Starts soft and gets louder. Stops by itself after this long.</div></div>
-        <div class="row-ctl"><div class="seg" id="set-ring" data-od-id="set-ring"><button type="button" data-v="5">5 min</button><button type="button" data-v="10">10</button><button type="button" data-v="20">20</button><button type="button" data-v="30">30</button></div></div>
+    <!-- ── Alarms ── -->
+    <div class="page" id="pg-alarms" hidden>
+      <div class="sect">
+        <div id="alarmList"></div>
+        <button class="btn btn-quiet" id="addAlarmBtn" type="button" data-od-id="add-alarm">+ Add alarm</button>
       </div>
-      <div class="row">
-        <div><div class="row-label">Pause all alarms until</div><div class="row-help">For school breaks, sick days and trips. Alarms stay quiet up to and including this date.</div></div>
-        <div class="row-ctl pauserow"><input type="date" id="set-pause" data-od-id="set-pause"><button class="btn btn-quiet" id="clearPauseBtn" type="button">Clear</button></div>
+      <div class="sect">
+        <div class="row">
+          <div><div class="row-label">Ring for</div><div class="row-help">Starts soft and gets louder, then stops by itself.</div></div>
+          <div class="row-ctl"><div class="seg" id="set-ring" data-od-id="set-ring"><button type="button" data-v="5">5 min</button><button type="button" data-v="10">10</button><button type="button" data-v="20">20</button><button type="button" data-v="30">30</button></div></div>
+        </div>
+        <div class="row">
+          <div><div class="row-label">Pause all alarms until</div><div class="row-help">For school breaks, sick days and trips. Quiet up to and including this date.</div></div>
+          <div class="row-ctl pauserow"><input type="date" id="set-pause" data-od-id="set-pause"><button class="btn btn-quiet" id="clearPauseBtn" type="button">Clear</button></div>
+        </div>
       </div>
     </div>
 
-    <div class="sect">
-      <h3>Night &amp; morning</h3>
-      <div class="row">
-        <div><div class="row-label">Night mode</div><div class="row-help">From bedtime until the wake-up time, only the time shows, in dim red or amber on black. Tap the screen to see everything for a few seconds.</div></div>
-        <div class="row-ctl"><button class="switch" id="set-night" type="button" role="switch" aria-checked="false" aria-label="Night mode" data-od-id="set-night"></button></div>
+    <!-- ── Bedtime & morning ── -->
+    <div class="page" id="pg-bed" hidden>
+      <div class="sect">
+        <div class="row">
+          <div><div class="row-label">Bedtime</div><div class="row-help">The dim night face starts here.</div></div>
+          <div class="row-ctl"><input type="time" id="set-bedtime" data-od-id="set-bedtime"></div>
+        </div>
+        <div class="row">
+          <div><div class="row-label">Wake-up time</div><div class="row-help">For days with no alarm. On alarm days, the earliest alarm is the wake-up time.</div></div>
+          <div class="row-ctl"><input type="time" id="set-morning" data-od-id="set-morning"></div>
+        </div>
       </div>
-      <div class="row">
-        <div><div class="row-label">Bedtime</div><div class="row-help">Night mode starts here. A bedtime countdown shows in the evening.</div></div>
-        <div class="row-ctl"><input type="time" id="set-bedtime" data-od-id="set-bedtime"></div>
-      </div>
-      <div class="row">
-        <div><div class="row-label">Wake-up time</div><div class="row-help">Used on days with no alarm. On alarm days, the earliest alarm is the wake-up time.</div></div>
-        <div class="row-ctl"><input type="time" id="set-morning" data-od-id="set-morning"></div>
-      </div>
-      <div class="row">
-        <div class="row-label">Night color</div>
-        <div class="row-ctl"><div class="seg" id="set-nightcolor" data-od-id="set-nightcolor"><button type="button" data-v="red">Red</button><button type="button" data-v="amber">Amber</button><button type="button" data-v="grey">Grey</button></div></div>
-      </div>
-      <div class="row">
-        <div><div class="row-label">Night brightness</div><div class="row-help">A web page can't turn down the backlight. Also set the iPad's own brightness low (see README).</div></div>
-        <div class="row-ctl"><input type="range" id="set-nightlevel" min="10" max="100" step="5" data-od-id="set-nightlevel"></div>
-      </div>
-      <div class="row">
-        <div><div class="row-label">"OK to get up" light</div><div class="row-help">At wake-up time the screen glows green with a sun for 45 minutes. Red means stay in bed, green means get up. Works with silent alarms too.</div></div>
-        <div class="row-ctl"><button class="switch" id="set-oktowake" type="button" role="switch" aria-checked="false" aria-label="OK to get up light" data-od-id="set-oktowake"></button></div>
-      </div>
-      <div class="row">
-        <div><div class="row-label">Preview night mode</div><div class="row-help">Closes Settings and shows the night face for 10 seconds.</div></div>
-        <div class="row-ctl"><button class="btn btn-quiet" id="previewNightBtn" type="button">Preview</button></div>
-      </div>
-    </div>
-
-    <div class="sect">
-      <h3>Talking clock</h3>
-      <div class="row">
-        <div><div class="row-label">Talking clock</div><div class="row-help">Tap the time to hear it said out loud, handy before kids can read a clock. Alarms start with a spoken good morning and the day, and it says good night at bedtime. Uses the iPad's built-in voice, not Siri, and works offline.</div></div>
-        <div class="row-ctl"><button class="switch" id="set-talk" type="button" role="switch" aria-checked="false" aria-label="Talking clock" data-od-id="set-talk"></button></div>
-      </div>
-      <div class="row">
-        <div><div class="row-label">Hear it</div><div class="row-help" id="talkHelp">Says what a tap on the time would say right now.</div></div>
-        <div class="row-ctl"><button class="btn btn-quiet" id="talkTestBtn" type="button">Speak</button></div>
+      <div class="sect">
+        <div class="row">
+          <div><div class="row-label">Night face</div><div class="row-help">Only the time, dim, on black. A tap shows everything for a few seconds. Off keeps the normal clock all night.</div></div>
+          <div class="row-ctl"><div class="seg" id="set-nightcolor" data-od-id="set-nightcolor"><button type="button" data-v="red">Red</button><button type="button" data-v="amber">Amber</button><button type="button" data-v="grey">Grey</button><button type="button" data-v="off">Off</button></div></div>
+        </div>
+        <div class="row" id="rowNightLevel">
+          <div><div class="row-label">Night brightness</div><div class="row-help">Also turn the iPad's own brightness down (see README).</div></div>
+          <div class="row-ctl"><input type="range" id="set-nightlevel" min="10" max="100" step="5" data-od-id="set-nightlevel"></div>
+        </div>
+        <div class="row">
+          <div><div class="row-label">"OK to get up" light</div><div class="row-help">Glows green with a sun for 45 minutes at wake-up. Red means stay in bed, green means get up.</div></div>
+          <div class="row-ctl"><button class="switch" id="set-oktowake" type="button" role="switch" aria-checked="false" aria-label="OK to get up light" data-od-id="set-oktowake"></button></div>
+        </div>
+        <div class="row">
+          <div><div class="row-label">Preview the night face</div><div class="row-help">Closes Settings and shows it for 10 seconds.</div></div>
+          <div class="row-ctl"><button class="btn btn-quiet" id="previewNightBtn" type="button">Preview</button></div>
+        </div>
       </div>
     </div>
 
-    <div class="sect">
-      <h3>Routines</h3>
-      <div class="row">
-        <div><div class="row-label">Show routine cards</div><div class="row-help">Picture checklists your child taps off: the bedtime routine before bedtime, the morning routine after wake-up. Finishing one gives a star and counts the days in a row.</div></div>
-        <div class="row-ctl"><button class="switch" id="set-routines" type="button" role="switch" aria-checked="false" aria-label="Show routine cards" data-od-id="set-routines"></button></div>
+    <!-- ── Routines ── -->
+    <div class="page" id="pg-routines" hidden>
+      <div class="sect">
+        <div class="row">
+          <div><div class="row-label">Show routine cards</div><div class="row-help">Picture checklists your child taps off. Finishing one gives a star and counts the days in a row.</div></div>
+          <div class="row-ctl"><button class="switch" id="set-routines" type="button" role="switch" aria-checked="false" aria-label="Show routine cards" data-od-id="set-routines"></button></div>
+        </div>
+        <div class="row">
+          <div><div class="row-label">Bedtime routine shows</div><div class="row-help">This long before bedtime.</div></div>
+          <div class="row-ctl"><div class="seg" id="set-rlead"><button type="button" data-v="30">30 min</button><button type="button" data-v="45">45 min</button><button type="button" data-v="60">1 hour</button></div></div>
+        </div>
+        <div class="row">
+          <div><div class="row-label">Morning routine shows for</div><div class="row-help">Starting at the wake-up time.</div></div>
+          <div class="row-ctl"><div class="seg" id="set-rmorning"><button type="button" data-v="60">1 hour</button><button type="button" data-v="90">1&frac12; hours</button><button type="button" data-v="120">2 hours</button></div></div>
+        </div>
+        <div class="row">
+          <div><div class="row-label">Try it now</div><div class="row-help">Shows a routine for 2 minutes. Ticks made while trying don't count.</div></div>
+          <div class="row-ctl trybtns"><button class="btn btn-quiet" id="tryMorning" type="button">Morning</button><button class="btn btn-quiet" id="tryBedtime" type="button">Bedtime</button></div>
+        </div>
       </div>
-      <div class="row">
-        <div><div class="row-label">Bedtime routine shows</div><div class="row-help">This long before bedtime.</div></div>
-        <div class="row-ctl"><div class="seg" id="set-rlead"><button type="button" data-v="30">30 min</button><button type="button" data-v="45">45 min</button><button type="button" data-v="60">1 hour</button></div></div>
+      <div class="sect">
+        <h3>Morning steps</h3>
+        <div id="stepsMorning"></div>
+        <button class="btn btn-quiet" id="addStepMorning" type="button" style="margin-top:1.2vmin;">+ Add step</button>
       </div>
-      <div class="row">
-        <div><div class="row-label">Morning routine shows for</div><div class="row-help">Starting at the wake-up time.</div></div>
-        <div class="row-ctl"><div class="seg" id="set-rmorning"><button type="button" data-v="60">1 hour</button><button type="button" data-v="90">1&frac12; hours</button><button type="button" data-v="120">2 hours</button></div></div>
-      </div>
-      <div class="subhead">Morning steps (up to 6)</div>
-      <div id="stepsMorning"></div>
-      <button class="btn btn-quiet" id="addStepMorning" type="button" style="margin-top:1.2vmin;">+ Add step</button>
-      <div class="subhead">Bedtime steps (up to 6)</div>
-      <div id="stepsBedtime"></div>
-      <button class="btn btn-quiet" id="addStepBedtime" type="button" style="margin-top:1.2vmin;">+ Add step</button>
-      <div class="row" style="margin-top:2vmin;">
-        <div><div class="row-label">Try it now</div><div class="row-help">Closes Settings and shows a routine for 2 minutes. Ticks made while trying don't count.</div></div>
-        <div class="row-ctl trybtns"><button class="btn btn-quiet" id="tryMorning" type="button">Morning</button><button class="btn btn-quiet" id="tryBedtime" type="button">Bedtime</button></div>
-      </div>
-    </div>
-
-    <div class="sect">
-      <h3>Countdowns</h3>
-      <div class="row-help">Young children understand &ldquo;sleeps&rdquo; better than dates. The nearest countdown shows as a card, like &ldquo;4 sleeps until Diwali&rdquo;. The birthday countdown is set under Room.</div>
-      <div class="row">
-        <div><div class="row-label">Festivals</div><div class="row-help">Count down to festivals in the holiday list, from 3 weeks before.</div></div>
-        <div class="row-ctl"><button class="switch" id="set-festcd" type="button" role="switch" aria-checked="false" aria-label="Festival countdowns" data-od-id="set-festcd"></button></div>
-      </div>
-      <div class="subhead">Your own</div>
-      <div id="eventList"></div>
-      <div class="steprow" style="border-bottom:none;"><select class="emo-pick" id="newEventEmoji" aria-label="Picture"></select><input type="text" id="newEventName" placeholder="e.g. Grandma visits" maxlength="30" aria-label="Name"><input type="date" id="newEventDate" aria-label="Date"></div>
-      <button class="btn btn-quiet" id="addEventBtn" type="button">+ Add countdown</button>
-    </div>
-
-    <div class="sect">
-      <h3>Look</h3>
-      <div class="row-help">Pick a scene. Every scene follows the real sun through dawn, day, golden hour, dusk and a starry evening, and keeps gently moving. At bedtime the dim night face takes over.</div>
-      <div class="tgrid" id="sceneGrid" data-od-id="scene-gallery">
-        <button class="tcard" type="button" data-scene="sky" data-od-id="scene-sky"><span class="tprev pv-sky"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" aria-hidden="true"><circle cx="8" cy="8" r="3.4"></circle><path d="M8 1.8v1.4M8 12.8v1.4M1.8 8h1.4M12.8 8h1.4M3.6 3.6l1 1M11.4 11.4l1 1M3.6 12.4l1-1M11.4 4.6l1-1"></path><path d="M10.5 20.5h8a3.2 3.2 0 0 0 .2-6.4 4.6 4.6 0 0 0-8.9 1.5 2.5 2.5 0 0 0 .7 4.9z" fill="currentColor"></path></svg></span><span class="tmeta"><span class="tname">Sky</span><span class="thint">Sun, clouds, birds, stars</span></span></button>
-        <button class="tcard" type="button" data-scene="hills" data-od-id="scene-hills"><span class="tprev pv-hills"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linejoin="round" aria-hidden="true"><path d="M1.5 20l6.5-9 4.5 5.5 3.5-3.5 6.5 7z" fill="currentColor"></path><circle cx="17.5" cy="5.5" r="2.6"></circle></svg></span><span class="tmeta"><span class="tname">Hills</span><span class="thint">Windmill, fireflies at dusk</span></span></button>
-        <button class="tcard" type="button" data-scene="ocean" data-od-id="scene-ocean"><span class="tprev pv-ocean"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" aria-hidden="true"><path d="M2 9c2.5-2 4.5-2 7 0s4.5 2 7 0 4.5-2 6 0M2 14c2.5-2 4.5-2 7 0s4.5 2 7 0 4.5-2 6 0M2 19c2.5-2 4.5-2 7 0s4.5 2 7 0 4.5-2 6 0"></path></svg></span><span class="tmeta"><span class="tname">Ocean</span><span class="thint">Waves, a boat, fish</span></span></button>
-        <button class="tcard" type="button" data-scene="space" data-od-id="scene-space"><span class="tprev pv-space"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8" aria-hidden="true"><circle cx="12" cy="12" r="5" fill="currentColor"></circle><ellipse cx="12" cy="12" rx="10.5" ry="3.2" transform="rotate(-20 12 12)"></ellipse></svg></span><span class="tmeta"><span class="tname">Space</span><span class="thint">Planet, rockets, comets</span></span></button>
-        <button class="tcard" type="button" data-scene="aurora" data-od-id="scene-aurora"><span class="tprev pv-aurora"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" aria-hidden="true"><path d="M2 8c4-4 7 4 10 0s6-4 10 0M2 13c4-4 7 4 10 0s6-4 10 0M2 18c4-4 7 4 10 0s6-4 10 0"></path></svg></span><span class="tmeta"><span class="tname">Aurora</span><span class="thint">Slowly flowing colours</span></span></button>
-        <button class="tcard" type="button" data-scene="calm" data-od-id="scene-calm"><span class="tprev pv-calm"><svg viewBox="0 0 24 24" fill="none" aria-hidden="true"><path d="M20 14.5A8 8 0 1 1 9.5 4a6.5 6.5 0 0 0 10.5 10.5z" fill="currentColor"></path></svg></span><span class="tmeta"><span class="tname">Calm</span><span class="thint">Still and simple</span></span></button>
-      </div>
-      <div class="row">
-        <div><div class="row-label">Clock face</div><div class="row-help">Analog helps kids learn to tell the time. At night the clock is always digital.</div></div>
-        <div class="row-ctl"><div class="seg" id="set-face" data-od-id="set-face"><button type="button" data-v="digital">Digital</button><button type="button" data-v="flip">Flip</button><button type="button" data-v="analog">Analog</button></div></div>
-      </div>
-      <div class="row">
-        <div><div class="row-label">Minute numbers on the analog clock</div><div class="row-help">Blue 5, 10, 15&hellip; around the edge, matching the blue minute hand. The red hour hand matches the red hour numbers.</div></div>
-        <div class="row-ctl"><button class="switch" id="set-minnums" type="button" role="switch" aria-checked="false" aria-label="Minute numbers" data-od-id="set-minnums"></button></div>
-      </div>
-      <div class="row">
-        <div><div class="row-label">Moving background</div><div class="row-help" id="motionHelp">Clouds, waves, fireflies, rockets and stars keep moving. Always still at night. Turn it off if the iPad gets warm.</div></div>
-        <div class="row-ctl"><button class="switch" id="set-motion" type="button" role="switch" aria-checked="false" aria-label="Moving background" data-od-id="set-motion"></button></div>
+      <div class="sect">
+        <h3>Bedtime steps</h3>
+        <div id="stepsBedtime"></div>
+        <button class="btn btn-quiet" id="addStepBedtime" type="button" style="margin-top:1.2vmin;">+ Add step</button>
       </div>
     </div>
 
-    <div class="sect">
-      <h3>Clock</h3>
-      <div class="row">
-        <div class="row-label">Time format</div>
-        <div class="row-ctl"><div class="seg" id="set-format" data-od-id="set-format"><button type="button" data-v="12">12-hour</button><button type="button" data-v="24">24-hour</button></div></div>
+    <!-- ── Look ── -->
+    <div class="page" id="pg-look" hidden>
+      <div class="sect">
+        <h3>Scene</h3>
+        <div class="tgrid" id="sceneGrid" data-od-id="scene-gallery">
+          <button class="tcard" type="button" data-scene="sky" data-od-id="scene-sky"><span class="tprev pv-sky"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" aria-hidden="true"><circle cx="8" cy="8" r="3.4"></circle><path d="M8 1.8v1.4M8 12.8v1.4M1.8 8h1.4M12.8 8h1.4M3.6 3.6l1 1M11.4 11.4l1 1M3.6 12.4l1-1M11.4 4.6l1-1"></path><path d="M10.5 20.5h8a3.2 3.2 0 0 0 .2-6.4 4.6 4.6 0 0 0-8.9 1.5 2.5 2.5 0 0 0 .7 4.9z" fill="currentColor"></path></svg></span><span class="tmeta"><span class="tname">Sky</span><span class="thint">Sun, clouds, birds, stars</span></span></button>
+          <button class="tcard" type="button" data-scene="hills" data-od-id="scene-hills"><span class="tprev pv-hills"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linejoin="round" aria-hidden="true"><path d="M1.5 20l6.5-9 4.5 5.5 3.5-3.5 6.5 7z" fill="currentColor"></path><circle cx="17.5" cy="5.5" r="2.6"></circle></svg></span><span class="tmeta"><span class="tname">Hills</span><span class="thint">Windmill, fireflies at dusk</span></span></button>
+          <button class="tcard" type="button" data-scene="ocean" data-od-id="scene-ocean"><span class="tprev pv-ocean"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" aria-hidden="true"><path d="M2 9c2.5-2 4.5-2 7 0s4.5 2 7 0 4.5-2 6 0M2 14c2.5-2 4.5-2 7 0s4.5 2 7 0 4.5-2 6 0M2 19c2.5-2 4.5-2 7 0s4.5 2 7 0 4.5-2 6 0"></path></svg></span><span class="tmeta"><span class="tname">Ocean</span><span class="thint">Waves, a boat, fish</span></span></button>
+          <button class="tcard" type="button" data-scene="space" data-od-id="scene-space"><span class="tprev pv-space"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8" aria-hidden="true"><circle cx="12" cy="12" r="5" fill="currentColor"></circle><ellipse cx="12" cy="12" rx="10.5" ry="3.2" transform="rotate(-20 12 12)"></ellipse></svg></span><span class="tmeta"><span class="tname">Space</span><span class="thint">Planet, rockets, comets</span></span></button>
+          <button class="tcard" type="button" data-scene="aurora" data-od-id="scene-aurora"><span class="tprev pv-aurora"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" aria-hidden="true"><path d="M2 8c4-4 7 4 10 0s6-4 10 0M2 13c4-4 7 4 10 0s6-4 10 0M2 18c4-4 7 4 10 0s6-4 10 0"></path></svg></span><span class="tmeta"><span class="tname">Aurora</span><span class="thint">Slowly flowing colours</span></span></button>
+          <button class="tcard" type="button" data-scene="calm" data-od-id="scene-calm"><span class="tprev pv-calm"><svg viewBox="0 0 24 24" fill="none" aria-hidden="true"><path d="M20 14.5A8 8 0 1 1 9.5 4a6.5 6.5 0 0 0 10.5 10.5z" fill="currentColor"></path></svg></span><span class="tmeta"><span class="tname">Calm</span><span class="thint">Still and simple</span></span></button>
+        </div>
+        <div class="row">
+          <div><div class="row-label">Moving background</div><div class="row-help" id="motionHelp">Clouds, waves, fireflies and stars keep moving. Always still at night. Turn it off if the iPad gets warm.</div></div>
+          <div class="row-ctl"><button class="switch" id="set-motion" type="button" role="switch" aria-checked="false" aria-label="Moving background" data-od-id="set-motion"></button></div>
+        </div>
       </div>
-      <div class="row">
-        <div><div class="row-label">Show seconds</div><div class="row-help">Daytime only. Seconds are always hidden at night.</div></div>
-        <div class="row-ctl"><button class="switch" id="set-seconds" type="button" role="switch" aria-checked="false" aria-label="Show seconds" data-od-id="set-seconds"></button></div>
-      </div>
-      <div class="row">
-        <div><div class="row-label">Drift protection</div><div class="row-help">Nudges the clock a few pixels every few minutes to protect the screen.</div></div>
-        <div class="row-ctl"><button class="switch" id="set-drift" type="button" role="switch" aria-checked="false" aria-label="Drift protection" data-od-id="set-drift"></button></div>
-      </div>
-    </div>
-
-    <div class="sect">
-      <h3>Room</h3>
-      <div class="row">
-        <div><div class="row-label">Child's name</div><div class="row-help">Shown in the greeting. Leave blank for none.</div></div>
-        <div class="row-ctl"><input type="text" id="set-name" placeholder="Optional" maxlength="24" data-od-id="set-name"></div>
-      </div>
-      <div class="row">
-        <div><div class="row-label">Birthday</div><div class="row-help">Optional. Shows a countdown from 30 days out, then a greeting on the day.</div></div>
-        <div class="row-ctl"><input type="date" id="set-birthday" data-od-id="set-birthday"></div>
-      </div>
-      <div class="row">
-        <div><div class="row-label">City</div><div class="row-help" id="locHelp">For sunrise and sunset times, which every scene follows.</div></div>
-        <div class="row-ctl"><select id="set-city" aria-label="City" data-od-id="set-city"></select></div>
-      </div>
-      <div class="row">
-        <div><div class="row-label">Use this iPad's location</div><div class="row-help" id="locBtnHelp">Only works when the page is opened from an https:// address. Saved on this iPad only.</div></div>
-        <div class="row-ctl"><button class="btn btn-quiet" id="locBtn" type="button">Locate</button></div>
-      </div>
-    </div>
-
-    <div class="sect">
-      <h3>Holidays (India)</h3>
-      <div class="row-help" id="holidayHelp" style="margin-bottom:1.6vmin;"></div>
-      <div class="subhead">Coming up</div>
-      <div id="holidayUpcoming"></div>
-      <div class="subhead">Your school's days off</div>
-      <div id="holidayList"></div>
-      <div class="holidayrow" style="border-bottom:none;">
-        <input class="hname" id="newHolidayName" type="text" placeholder="e.g. Holi, Diwali break" maxlength="40">
-        <input class="hdate" id="newHolidayDate" type="date">
-      </div>
-      <button class="btn btn-quiet" id="addHolidayBtn" type="button" data-od-id="add-holiday">+ Add day off</button>
-    </div>
-
-    <div class="sect">
-      <h3>Parental lock</h3>
-      <div class="row">
-        <div><div class="row-label">Lock Settings with a PIN</div><div class="row-help">Stops little hands changing the clock. The clock, alarms and snooze keep working. Forgot the PIN? Clear this site's data in Safari. That also erases the clock's settings.</div></div>
-        <div class="row-ctl"><button class="switch" id="set-lock" type="button" role="switch" aria-checked="false" aria-label="Parental lock" data-od-id="set-lock"></button></div>
-      </div>
-      <div class="row" id="lockPinRow" hidden>
-        <div><div class="row-label">PIN</div><div class="row-help">Four digits. Change it any time.</div></div>
-        <div class="row-ctl"><button class="btn btn-quiet" id="changePinBtn" type="button" data-od-id="change-pin">Change PIN</button></div>
-      </div>
-      <div class="row">
-        <div><div class="row-label">Lock again</div><div class="row-help">How soon Settings needs the PIN again after you close it.</div></div>
-        <div class="row-ctl"><div class="seg" id="set-relock" data-od-id="set-relock"><button type="button" data-v="0">Right away</button><button type="button" data-v="1">1 min</button><button type="button" data-v="5">5 min</button></div></div>
+      <div class="sect">
+        <h3>Clock</h3>
+        <div class="row">
+          <div><div class="row-label">Clock face</div><div class="row-help">Analog helps kids learn to tell the time. At night it's always digital.</div></div>
+          <div class="row-ctl"><div class="seg" id="set-face" data-od-id="set-face"><button type="button" data-v="digital">Digital</button><button type="button" data-v="flip">Flip</button><button type="button" data-v="analog">Analog</button></div></div>
+        </div>
+        <div class="row" id="rowMinNums">
+          <div><div class="row-label">Minute numbers</div><div class="row-help">Blue 5, 10, 15&hellip; around the analog clock, matching the blue minute hand.</div></div>
+          <div class="row-ctl"><button class="switch" id="set-minnums" type="button" role="switch" aria-checked="false" aria-label="Minute numbers" data-od-id="set-minnums"></button></div>
+        </div>
+        <div class="row">
+          <div class="row-label">Time format</div>
+          <div class="row-ctl"><div class="seg" id="set-format" data-od-id="set-format"><button type="button" data-v="12">12-hour</button><button type="button" data-v="24">24-hour</button></div></div>
+        </div>
+        <div class="row">
+          <div><div class="row-label">Show seconds</div><div class="row-help">Daytime only.</div></div>
+          <div class="row-ctl"><button class="switch" id="set-seconds" type="button" role="switch" aria-checked="false" aria-label="Show seconds" data-od-id="set-seconds"></button></div>
+        </div>
       </div>
     </div>
 
-    <div class="sect">
-      <h3>Reset</h3>
-      <div class="row-help" style="margin-bottom:1.6vmin;">Settings close by themselves after 3 minutes without a tap, so they aren't left open overnight.</div>
-      <button class="btn btn-danger" id="resetBtn" type="button" data-od-id="reset">Reset all settings</button>
+    <!-- ── Child & family ── -->
+    <div class="page" id="pg-family" hidden>
+      <div class="sect">
+        <div class="row">
+          <div><div class="row-label">Child's name</div><div class="row-help">Used in the greeting and by the talking clock.</div></div>
+          <div class="row-ctl"><input type="text" id="set-name" placeholder="Optional" maxlength="24" data-od-id="set-name"></div>
+        </div>
+        <div class="row">
+          <div><div class="row-label">Birthday</div><div class="row-help">Counts the sleeps from 30 days before, then says happy birthday.</div></div>
+          <div class="row-ctl"><input type="date" id="set-birthday" data-od-id="set-birthday"></div>
+        </div>
+        <div class="row">
+          <div><div class="row-label">Talking clock</div><div class="row-help" id="talkHelp">Tap the time to hear it. Alarms say good morning, and it says good night at bedtime. Turning it on plays a sample.</div></div>
+          <div class="row-ctl"><button class="switch" id="set-talk" type="button" role="switch" aria-checked="false" aria-label="Talking clock" data-od-id="set-talk"></button></div>
+        </div>
+      </div>
+      <div class="sect">
+        <h3>Countdowns</h3>
+        <div class="row">
+          <div><div class="row-label">Festivals</div><div class="row-help">&ldquo;12 sleeps until Diwali&rdquo;, from 3 weeks before.</div></div>
+          <div class="row-ctl"><button class="switch" id="set-festcd" type="button" role="switch" aria-checked="false" aria-label="Festival countdowns" data-od-id="set-festcd"></button></div>
+        </div>
+        <div id="eventList"></div>
+        <div class="steprow" style="border-bottom:none;"><select class="emo-pick" id="newEventEmoji" aria-label="Picture"></select><input type="text" id="newEventName" placeholder="e.g. Grandma visits" maxlength="30" aria-label="Name"><input type="date" id="newEventDate" aria-label="Date"></div>
+        <button class="btn btn-quiet" id="addEventBtn" type="button">+ Add countdown</button>
+      </div>
     </div>
-    <div class="version" id="versionLine"></div>
+
+    <!-- ── More ── -->
+    <div class="page" id="pg-more" hidden>
+      <div class="sect">
+        <div class="row">
+          <div><div class="row-label">City</div><div class="row-help" id="locHelp">For sunrise and sunset, which every scene follows.</div></div>
+          <div class="row-ctl"><select id="set-city" aria-label="City" data-od-id="set-city"></select></div>
+        </div>
+      </div>
+      <div class="sect">
+        <h3>Parental lock</h3>
+        <div class="row">
+          <div><div class="row-label">Lock Settings with a PIN</div><div class="row-help">The clock, alarms and snooze keep working. Forgot the PIN? Clear this site's data in Safari, which also erases the clock's settings.</div></div>
+          <div class="row-ctl"><button class="switch" id="set-lock" type="button" role="switch" aria-checked="false" aria-label="Parental lock" data-od-id="set-lock"></button></div>
+        </div>
+        <div id="lockPinRow" hidden>
+          <div class="row">
+            <div><div class="row-label">Ask for the PIN again</div><div class="row-help">After Settings is closed.</div></div>
+            <div class="row-ctl"><div class="seg" id="set-relock" data-od-id="set-relock"><button type="button" data-v="0">Right away</button><button type="button" data-v="1">1 min</button><button type="button" data-v="5">5 min</button></div></div>
+          </div>
+          <div class="row">
+            <div class="row-label">PIN</div>
+            <div class="row-ctl"><button class="btn btn-quiet" id="changePinBtn" type="button" data-od-id="change-pin">Change PIN</button></div>
+          </div>
+        </div>
+      </div>
+      <div class="sect">
+        <h3>Holidays (India)</h3>
+        <div class="row-help" id="holidayHelp" style="margin-bottom:1.6vmin;"></div>
+        <div class="subhead">Coming up</div>
+        <div id="holidayUpcoming"></div>
+        <div class="subhead">Your school's days off</div>
+        <div id="holidayList"></div>
+        <div class="holidayrow" style="border-bottom:none;">
+          <input class="hname" id="newHolidayName" type="text" placeholder="e.g. Holi, Diwali break" maxlength="40">
+          <input class="hdate" id="newHolidayDate" type="date">
+        </div>
+        <button class="btn btn-quiet" id="addHolidayBtn" type="button" data-od-id="add-holiday">+ Add day off</button>
+      </div>
+      <div class="sect">
+        <h3>Health</h3>
+        <div class="row">
+          <div><div class="row-label">Alarm sound</div><div class="row-help">Safari only plays sound after a tap. Tap the clock once each time it's opened or reloaded.</div></div>
+          <div class="row-ctl stat" id="statSound">&mdash;</div>
+        </div>
+        <div class="row">
+          <div><div class="row-label">Screen stays on</div><div class="row-help">Alarms only ring while the clock is on screen. Set the iPad's Auto-Lock to Never.</div></div>
+          <div class="row-ctl stat" id="statWake">&mdash;</div>
+        </div>
+        <div class="row">
+          <div><div class="row-label">Clock running</div><div class="row-help" id="statRunHelp"></div></div>
+          <div class="row-ctl stat" id="statRun">&mdash;</div>
+        </div>
+        <div class="row">
+          <div><div class="row-label">Full screen</div><div class="row-help">To hide Safari's bar: Share button &rarr; <strong>Add to Home Screen</strong>, then open the clock from its new icon. Settings made in Safari don't carry over, so set them once more there.</div></div>
+          <div class="row-ctl fsctl"><div class="stat" id="statFull">&mdash;</div><button class="btn btn-quiet" id="fsBtn" type="button" hidden>Full screen now</button></div>
+        </div>
+        <div class="row">
+          <div><div class="row-label">Works without Wi-Fi</div><div class="row-help">Keeps a copy of the clock on this iPad. Needs an https:// address.</div></div>
+          <div class="row-ctl stat" id="statOffline">&mdash;</div>
+        </div>
+      </div>
+      <div class="sect">
+        <div class="row-help" style="margin-bottom:1.6vmin;">Settings close by themselves after 3 minutes without a tap, so they aren't left open overnight.</div>
+        <button class="btn btn-danger" id="resetBtn" type="button" data-od-id="reset">Reset all settings</button>
+      </div>
+    </div>
   </div>
 </div>
 
@@ -1207,7 +1250,7 @@ input[type="range"]::-webkit-slider-thumb { -webkit-appearance: none; width: 28p
     note: "Festival dates are preloaded for 2026 and 2027. “No school” days are India's national gazetted holidays. Only those skip alarms set to “Skip school holidays”. Regional festivals (Holi, Janmashtami, Pongal…) show on the clock but don't skip alarms. If your school is closed, add the day below. Lunar and Islamic dates can move a day by region."
   };
 
-  var VERSION = "3.1 (sleep sounds, routines, countdowns)";
+  var VERSION = "3.2 (simpler settings)";
 
   /* ── helpers ─────────────────────────────────────────────────────── */
   function $(id) { return document.getElementById(id); }
@@ -1340,7 +1383,7 @@ input[type="range"]::-webkit-slider-thumb { -webkit-appearance: none; width: 28p
     base.birthday = isYMD(base.birthday) ? base.birthday : "";
     base.format12 = base.format12 !== false;
     base.showSeconds = base.showSeconds !== false;
-    base.driftProtect = base.driftProtect !== false;
+    base.driftProtect = true; // LCD screens don't burn in; no longer a setting
     base.nightMode = base.nightMode !== false;
     base.okToWake = base.okToWake !== false;
     base.lockEnabled = base.lockEnabled === true;
@@ -2692,25 +2735,34 @@ input[type="range"]::-webkit-slider-thumb { -webkit-appearance: none; width: 28p
     else if (!e.shiftKey && (active === last || !root.contains(active))) { e.preventDefault(); first.focus(); }
   }
   function alarmsChanged() { saveState(); renderCards(); applyMode(); refreshSoundPill(); }
+  var alarmOpen = -1, DAY_SHORT = ["Sun","Mon","Tue","Wed","Thu","Fri","Sat"];
+  function daysText(days) {
+    var n = 0, i, list = [];
+    for (i = 0; i < 7; i++) if (days[i]) n++;
+    if (n === 7) return "Every day";
+    if (n === 0) return "No days";
+    if (n === 5 && !days[0] && !days[6]) return "Mon\u2013Fri";
+    if (n === 2 && days[0] && days[6]) return "Weekends";
+    for (i = 1; i <= 7; i++) if (days[i % 7]) list.push(DAY_SHORT[i % 7]);
+    return list.join(", ");
+  }
   function renderAlarmList() {
-    var wrap = $("alarmList"), html = "", i, d, di, al, k;
-    if (!state.alarms.length) html = '<div class="row-help" style="margin-bottom:1.6vmin;">No alarms. The morning light still uses the wake-up time under Night &amp; morning.</div>';
+    var wrap = $("alarmList"), html = "", i, d, di, al, k, open;
+    if (!state.alarms.length) html = '<div class="row-help" style="margin-bottom:1.6vmin;">No alarms. The morning light still uses the wake-up time under Bedtime &amp; morning.</div>';
     for (i=0;i<state.alarms.length;i++){
-      al = state.alarms[i];
-      html += '<div class="alarmrow" data-i="' + i + '">';
-      html += '<div class="alarmrow-top"><div><div class="alarmrow-time">' + esc(formatClock(al.time)) + '</div><div class="alarmrow-label">' + esc(al.label || "Alarm") + (al.on ? "" : " · off") + '</div></div>';
-      html += '<div class="alarm-head-right"><input type="time" class="alarm-time-input" value="' + esc(al.time) + '" aria-label="Alarm time">';
-      html += '<button class="switch alarm-toggle' + (al.on ? " is-on" : "") + '" type="button" role="switch" aria-checked="' + (al.on ? "true" : "false") + '" aria-label="Alarm on" style="margin-left:1.2vmin;"></button></div></div>';
-      html += '<div class="daysrow">';
-      for (d=1; d<=7; d++){ di = d % 7; html += '<button class="daybtn' + (al.days[di] ? " is-on" : "") + '" data-d="' + di + '" type="button" aria-pressed="' + (al.days[di] ? "true" : "false") + '" aria-label="' + DAYS[di] + '">' + DAY_LABELS[di] + '</button>'; }
-      html += '</div>';
-      html += '<div class="alarmrow-opts"><input type="text" class="alarm-label-input" value="' + esc(al.label) + '" placeholder="Label" maxlength="24" aria-label="Alarm label">';
+      al = state.alarms[i]; open = i === alarmOpen;
+      html += '<div class="alarmrow' + (open ? " is-open" : "") + (al.on ? "" : " is-off") + '" data-i="' + i + '">';
+      html += '<div class="alarmrow-top"><button class="alarm-sum" type="button" aria-expanded="' + (open ? "true" : "false") + '"><span class="alarmrow-time">' + esc(formatClock(al.time)) + '</span>' +
+        '<span class="alarm-sum-sub"><span class="alarm-days">' + esc(daysText(al.days)) + '</span> \u00b7 <span class="alarmrow-label">' + esc(al.label || "Alarm") + '</span> \u00b7 ' + esc(SOUND_NAMES[al.sound]) + '</span></button>';
+      html += '<button class="switch alarm-toggle' + (al.on ? " is-on" : "") + '" type="button" role="switch" aria-checked="' + (al.on ? "true" : "false") + '" aria-label="Alarm on"></button></div>';
+      html += '<div class="alarm-edit"><div class="alarmrow-opts"><input type="time" class="alarm-time-input" value="' + esc(al.time) + '" aria-label="Alarm time">';
+      html += '<input type="text" class="alarm-label-input" value="' + esc(al.label) + '" placeholder="Label" maxlength="24" aria-label="Alarm label">';
       html += '<select class="alarm-sound" aria-label="Alarm sound">';
       for (k=0;k<SOUND_IDS.length;k++) html += '<option value="' + SOUND_IDS[k] + '"' + (al.sound === SOUND_IDS[k] ? " selected" : "") + '>' + esc(SOUND_NAMES[SOUND_IDS[k]]) + '</option>';
-      html += '</select></div>';
-      html += '<div class="alarmrow-foot"><span class="opt"><button class="switch alarm-skip' + (al.skipHolidays ? " is-on" : "") + '" type="button" role="switch" aria-checked="' + (al.skipHolidays ? "true" : "false") + '" aria-label="Skip school holidays"></button><span class="optlabel">Skip school holidays</span></span>';
-      html += '<button class="btn btn-danger alarm-del" type="button">Delete</button></div>';
-      html += '</div>';
+      html += '</select></div><div class="daysrow">';
+      for (d=1; d<=7; d++){ di = d % 7; html += '<button class="daybtn' + (al.days[di] ? " is-on" : "") + '" data-d="' + di + '" type="button" aria-pressed="' + (al.days[di] ? "true" : "false") + '" aria-label="' + DAYS[di] + '">' + DAY_LABELS[di] + '</button>'; }
+      html += '</div><div class="alarmrow-foot"><span class="opt"><button class="switch alarm-skip' + (al.skipHolidays ? " is-on" : "") + '" type="button" role="switch" aria-checked="' + (al.skipHolidays ? "true" : "false") + '" aria-label="Skip school holidays"></button><span class="optlabel">Skip school holidays</span></span>';
+      html += '<button class="btn btn-danger alarm-del" type="button">Delete</button></div></div></div>';
     }
     wrap.innerHTML = html;
     var rows = wrap.querySelectorAll(".alarmrow");
@@ -2718,15 +2770,16 @@ input[type="range"]::-webkit-slider-thumb { -webkit-appearance: none; width: 28p
   }
   function bindAlarmRow(row) {
     var i = parseInt(row.getAttribute("data-i"),10);
+    row.querySelector(".alarm-sum").addEventListener("click", function(){ alarmOpen = alarmOpen === i ? -1 : i; renderAlarmList(); });
     var timeIn = row.querySelector(".alarm-time-input");
     timeIn.addEventListener("change", function(){ if (!isHHMM(timeIn.value)) return; state.alarms[i].time = timeIn.value; alarmsChanged(); renderAlarmList(); });
     row.querySelector(".alarm-toggle").addEventListener("click", function(){ state.alarms[i].on = !state.alarms[i].on; alarmsChanged(); renderAlarmList(); });
     row.querySelector(".alarm-skip").addEventListener("click", function(){ state.alarms[i].skipHolidays = !state.alarms[i].skipHolidays; alarmsChanged(); renderAlarmList(); });
-    row.querySelector(".alarm-del").addEventListener("click", function(){ state.alarms.splice(i,1); alarmsChanged(); renderAlarmList(); });
+    row.querySelector(".alarm-del").addEventListener("click", function(){ state.alarms.splice(i,1); alarmOpen = -1; alarmsChanged(); renderAlarmList(); });
     var labIn = row.querySelector(".alarm-label-input");
     labIn.addEventListener("change", function(){ state.alarms[i].label = labIn.value; alarmsChanged(); renderAlarmList(); });
     var snd = row.querySelector(".alarm-sound");
-    snd.addEventListener("change", function(){ state.alarms[i].sound = snd.value; alarmsChanged(); previewSound(snd.value); });
+    snd.addEventListener("change", function(){ state.alarms[i].sound = snd.value; alarmsChanged(); renderAlarmList(); previewSound(snd.value); });
     var dayBtns = row.querySelectorAll(".daybtn");
     for (var k=0;k<dayBtns.length;k++){ (function(btn){ btn.addEventListener("click", function(){ var d = parseInt(btn.getAttribute("data-d"),10); state.alarms[i].days[d] = !state.alarms[i].days[d]; alarmsChanged(); renderAlarmList(); }); })(dayBtns[k]); }
   }
@@ -2773,6 +2826,7 @@ input[type="range"]::-webkit-slider-thumb { -webkit-appearance: none; width: 28p
     for (var i=0;i<cards.length;i++) cards[i].classList.toggle("is-on", cards[i].getAttribute("data-scene") === state.scene);
     segSet("set-face", state.face);
     setSwitch($("set-minnums"), state.minuteNums);
+    $("rowMinNums").hidden = state.face !== "analog"; // only matters for the analog face
   }
   function bindSceneGallery() {
     var cards = document.querySelectorAll("#sceneGrid .tcard");
@@ -2782,7 +2836,7 @@ input[type="range"]::-webkit-slider-thumb { -webkit-appearance: none; width: 28p
         saveState(); applyTheme(); renderSceneGallery();
       });
     })(cards[i]); }
-    segBind("set-face", function(v){ state.face = v; saveState(); applyTheme(); renderClock(true); });
+    segBind("set-face", function(v){ state.face = v; saveState(); applyTheme(); renderClock(true); renderSceneGallery(); });
     $("set-minnums").addEventListener("click", function(){ state.minuteNums = !state.minuteNums; setSwitch(this, state.minuteNums); saveState(); applyTheme(); });
   }
   /* Full screen without the Home Screen: some iPadOS versions let a page
@@ -2799,6 +2853,60 @@ input[type="range"]::-webkit-slider-thumb { -webkit-appearance: none; width: 28p
     if (p && p.then) p.then(function () { refreshHealth(); }, function () { fsFailed = true; refreshHealth(); });
     setTimeout(function () { if (!fullscreenEl()) fsFailed = true; refreshHealth(); }, 1500);
   }
+  /* ── settings pages ──────────────────────────────────────────────────
+   * Settings opens on a home page: a status line, the Test alarm button,
+   * and a tile per topic with a one-line summary. Each tile opens a page
+   * with a back button. */
+  var PAGE_TITLES = { home: "Settings", alarms: "Alarms", bed: "Bedtime & morning", routines: "Routines", look: "Look", family: "Child & family", more: "More" };
+  var SCENE_LABELS = { sky: "Sky", hills: "Hills", ocean: "Ocean", space: "Space", aurora: "Aurora", calm: "Calm" };
+  var setPage = "home";
+  function showPage(id) {
+    for (var k in PAGE_TITLES) if (PAGE_TITLES.hasOwnProperty(k)) $("pg-" + k).hidden = k !== id;
+    setPage = id;
+    $("setTitle").textContent = PAGE_TITLES[id];
+    $("setBack").hidden = id === "home";
+    $("settingsSheet").scrollTop = 0;
+    lastInteract = Date.now();
+    refreshHealth();
+  }
+  function bindPages() {
+    var tiles = document.querySelectorAll("#pg-home .tile"), i;
+    for (i = 0; i < tiles.length; i++) { (function (t) { t.addEventListener("click", function () { showPage(t.getAttribute("data-page")); }); })(tiles[i]); }
+    $("setBack").addEventListener("click", function () { showPage("home"); });
+  }
+  function needsSound() {
+    if (state.sleep.auto) return true;
+    for (var i = 0; i < state.alarms.length; i++) if (state.alarms[i].on && state.alarms[i].sound !== "silent") return true;
+    return false;
+  }
+  function renderStatusLine() {
+    var issues = [], gap = rt.lastGap, html = "", i;
+    if (!audioUnlocked && needsSound()) issues.push(["bad", "Alarm sound is off. Tap the clock once after it opens."]);
+    if (gap && Date.now() - (gap.at + gap.ms) < 24 * 3600000)
+      issues.push(["bad", "The clock stopped for " + humanDur(gap.ms) + " (" + whenStr(new Date(gap.at)) + "). Keep the screen on: Auto-Lock \u2192 Never."]);
+    if (window.navigator.standalone === false && !fullscreenEl()) issues.push(["warn", "Safari's bar is showing. See More \u2192 Health \u2192 Full screen."]);
+    if (!issues.length) issues.push(["ok", audioUnlocked ? "All good. Alarm sound is ready." : "All good."]);
+    for (i = 0; i < issues.length; i++) html += '<div class="sl is-' + issues[i][0] + '"><span class="sl-dot"></span><span>' + esc(issues[i][1]) + '</span></div>';
+    $("statusLines").innerHTML = html;
+  }
+  function renderSummaries() {
+    var now = new Date(), parts = [], on = 0, i, al, j = " \u00b7 ";
+    for (i = 0; i < state.alarms.length; i++) {
+      al = state.alarms[i]; if (!al.on) continue; on++;
+      if (parts.length < 2) parts.push((al.label || "Alarm") + " " + formatClock(al.time) + (al.sound === "silent" ? " (light)" : ""));
+    }
+    if (on > 2) parts.push("+" + (on - 2) + " more");
+    $("sum-alarms").textContent = pausedOn(now) ? "Paused until " + shortDate(parseYMD(state.pauseUntil)) :
+      (!state.alarms.length ? "No alarms" : (on ? parts.join(j) : "All alarms off"));
+    $("sum-bed").textContent = ["Bed " + formatClock(state.bedtime), state.nightMode ? (state.nightColor.charAt(0).toUpperCase() + state.nightColor.slice(1) + " night face") : "No night face",
+      state.okToWake ? "green wake-up light" : ""].filter(Boolean).join(j);
+    $("sum-routines").textContent = state.routinesOn ? "Morning " + state.routines.morning.length + " steps" + j + "Bedtime " + state.routines.bedtime.length + " steps" : "Off";
+    $("sum-look").textContent = [SCENE_LABELS[state.scene], state.face.charAt(0).toUpperCase() + state.face.slice(1), state.format12 ? "12-hour" : "24-hour"].join(j);
+    $("sum-family").textContent = [state.name || "No name yet", state.birthday ? "birthday " + shortDate(parseYMD(state.birthday)) : "",
+      state.talk ? "talking clock on" : "", state.events.length ? state.events.length + (state.events.length === 1 ? " countdown" : " countdowns") : ""].filter(Boolean).join(j);
+    $("sum-more").textContent = [state.location ? state.location.name : "No city set", lockActive() ? "PIN lock on" : "No PIN lock",
+      state.customHolidays.length ? state.customHolidays.length + " school days off" : ""].filter(Boolean).join(j);
+  }
   function setStat(id, text, kind) {
     var el = $(id);
     el.textContent = text;
@@ -2807,6 +2915,7 @@ input[type="range"]::-webkit-slider-thumb { -webkit-appearance: none; width: 28p
   }
   function refreshHealth() {
     if (!isOpen("settingsSheet")) return;
+    if (setPage === "home") { renderStatusLine(); renderSummaries(); }
     setStat("statSound", audioUnlocked ? "Ready" : "Tap the clock once", audioUnlocked ? "ok" : "bad");
     setStat("statWake", wakeState === "on" ? "On" : "Set Auto-Lock to Never", wakeState === "on" ? "ok" : "");
     setStat("statOffline", { ready: "Ready", pending: "Setting up\u2026", failed: "Couldn't set up", "needs-https": "Needs an https:// address", unsupported: "Not supported here" }[offlineState],
@@ -2830,14 +2939,16 @@ input[type="range"]::-webkit-slider-thumb { -webkit-appearance: none; width: 28p
     bIn.addEventListener("change", function(){ state.birthday = isYMD(bIn.value) ? bIn.value : ""; saveState(); renderCards(); });
     segBind("set-format", function(v){ state.format12 = (v==="12"); saveState(); renderClock(true); renderCards(); renderAlarmList(); });
     $("set-seconds").addEventListener("click", function(){ state.showSeconds = !state.showSeconds; setSwitch(this, state.showSeconds); saveState(); renderClock(true); });
-    $("set-drift").addEventListener("click", function(){ state.driftProtect = !state.driftProtect; setSwitch(this, state.driftProtect); saveState(); startDrift(); });
-    $("set-night").addEventListener("click", function(){ state.nightMode = !state.nightMode; setSwitch(this, state.nightMode); saveState(); applyMode(); });
     $("set-oktowake").addEventListener("click", function(){ state.okToWake = !state.okToWake; setSwitch(this, state.okToWake); saveState(); applyMode(); });
     var bt = $("set-bedtime");
     bt.addEventListener("change", function(){ if (!isHHMM(bt.value)) return; state.bedtime = bt.value; saveState(); applyMode(); renderCards(); });
     var mo = $("set-morning");
     mo.addEventListener("change", function(){ if (!isHHMM(mo.value)) return; state.morning = mo.value; saveState(); applyMode(); });
-    segBind("set-nightcolor", function(v){ state.nightColor = v; saveState(); applyTheme(); });
+    // "Off" in the night-face choice replaces the old Night mode switch.
+    segBind("set-nightcolor", function(v){
+      if (v === "off") state.nightMode = false; else { state.nightMode = true; state.nightColor = v; }
+      saveState(); applyTheme(); applyMode(); $("rowNightLevel").hidden = !state.nightMode;
+    });
     var nl = $("set-nightlevel");
     nl.addEventListener("input", function(){ state.nightLevel = intIn(nl.value, 10, 100, 40); saveState(); applyMode(); });
     $("previewNightBtn").addEventListener("click", function(){
@@ -2854,41 +2965,45 @@ input[type="range"]::-webkit-slider-thumb { -webkit-appearance: none; width: 28p
     document.addEventListener("fullscreenchange", refreshHealth);
     document.addEventListener("webkitfullscreenchange", refreshHealth);
     $("set-motion").addEventListener("click", function(){ state.motion = !state.motion; setSwitch(this, state.motion); saveState(); applyTheme(); });
-    $("set-talk").addEventListener("click", function(){ state.talk = !state.talk; setSwitch(this, state.talk); saveState(); if (state.talk) unlockSpeech(); });
-    $("talkTestBtn").addEventListener("click", function(){ unlockSpeech(); say(tapPhrase()); });
+    // Turning the talking clock on plays a sample, instead of a separate "Hear it" button.
+    $("set-talk").addEventListener("click", function(){ state.talk = !state.talk; setSwitch(this, state.talk); saveState(); if (state.talk) { unlockSpeech(); say(tapPhrase()); } });
     if (!synthOK) $("talkHelp").textContent = "This browser has no speech voices, so the talking clock can't work here.";
     var city = $("set-city");
     city.addEventListener("change", function(){
       var v = city.value, i;
+      if (v === "__locate") { locateIPad(); return; }
       if (v === "") state.location = null;
       for (i = 0; i < CITIES.length; i++) if (CITIES[i][0] === v) state.location = { name: v, lat: CITIES[i][1], lng: CITIES[i][2] };
       locationChanged();
     });
-    $("locBtn").addEventListener("click", function(){
-      var help = $("locBtnHelp");
-      if (!navigator.geolocation) { help.textContent = "This browser can't share its location. Pick a city instead."; return; }
-      help.textContent = "Asking for location\u2026";
-      navigator.geolocation.getCurrentPosition(function (pos) {
-        state.location = { name: "This iPad's location", lat: Math.round(pos.coords.latitude * 100) / 100, lng: Math.round(pos.coords.longitude * 100) / 100 };
-        help.textContent = "Saved on this iPad only.";
-        locationChanged();
-      }, function (err) {
-        help.textContent = (err && err.code === 1 ? "Location permission was refused. " : "Couldn't get the location. ") +
-          "It only works when the page is opened from an https:// address. Pick a city instead.";
-      }, { timeout: 15000, maximumAge: 86400000 });
-    });
     segBind("set-relock", function(v){ state.lockAutoMin = parseInt(v,10) || 0; saveState(); });
     bindSceneGallery();
     bindRoutineSettings();
+    bindPages();
     if (window.matchMedia && window.matchMedia("(prefers-reduced-motion: reduce)").matches)
       $("motionHelp").textContent += " Your iPad's Reduce Motion setting is on. The clock still moves while this switch is on.";
     $("holidayHelp").textContent = SEED.note;
     syncLockUI();
   }
+  // "Use this iPad's location" is an option in the City list.
+  function locateIPad() {
+    var help = $("locHelp");
+    if (!navigator.geolocation) { renderCityPicker(); help.textContent = "This browser can't share its location. Pick a city instead."; return; }
+    help.textContent = "Asking for location\u2026";
+    navigator.geolocation.getCurrentPosition(function (pos) {
+      state.location = { name: "This iPad's location", lat: Math.round(pos.coords.latitude * 100) / 100, lng: Math.round(pos.coords.longitude * 100) / 100 };
+      locationChanged();
+    }, function (err) {
+      renderCityPicker();
+      help.textContent = (err && err.code === 1 ? "Location permission was refused. " : "Couldn't get the location. ") +
+        "It only works when the clock is opened from an https:// address. Pick a city instead.";
+    }, { timeout: 15000, maximumAge: 86400000 });
+  }
   function renderCityPicker() {
     var html = '<option value="">Not set</option>', i, cur = state.location ? state.location.name : "", st;
     for (i = 0; i < CITIES.length; i++) html += '<option value="' + esc(CITIES[i][0]) + '"' + (cur === CITIES[i][0] ? " selected" : "") + '>' + esc(CITIES[i][0]) + '</option>';
     if (state.location && html.indexOf('selected') < 0) html += '<option value="__here" selected>' + esc(state.location.name) + '</option>';
+    else html += '<option value="__locate">\ud83d\udccd Use this iPad\u2019s location</option>';
     $("set-city").innerHTML = html;
     st = sunFor(new Date());
     $("locHelp").textContent = st ? ("Today: sunrise " + clockOf(st.rise) + " \u00b7 sunset " + clockOf(st.set) + ".") : "For sunrise and sunset times, which every scene follows. Without a city, scenes assume sunrise at 6 AM and sunset at 6 PM.";
@@ -2901,12 +3016,11 @@ input[type="range"]::-webkit-slider-thumb { -webkit-appearance: none; width: 28p
     renderSceneGallery();
     populateRoutineSettings();
     setSwitch($("set-seconds"), state.showSeconds);
-    setSwitch($("set-drift"), state.driftProtect);
-    setSwitch($("set-night"), state.nightMode);
     setSwitch($("set-oktowake"), state.okToWake);
     $("set-bedtime").value = state.bedtime;
     $("set-morning").value = state.morning;
-    segSet("set-nightcolor", state.nightColor);
+    segSet("set-nightcolor", state.nightMode ? state.nightColor : "off");
+    $("rowNightLevel").hidden = !state.nightMode;
     $("set-nightlevel").value = state.nightLevel;
     segSet("set-ring", String(state.ringMinutes));
     $("set-pause").value = state.pauseUntil;
@@ -2921,8 +3035,7 @@ input[type="range"]::-webkit-slider-thumb { -webkit-appearance: none; width: 28p
     sheetLastFocus = document.activeElement;
     lastInteract = Date.now();
     $("settingsSheet").classList.add("is-open");
-    $("settingsSheet").scrollTop = 0;
-    refreshHealth();
+    showPage("home");
     var d = $("doneBtn"); if (d && d.focus) { try { d.focus(); } catch (e) {} }
   }
   function closeSettings() {
@@ -3047,7 +3160,7 @@ input[type="range"]::-webkit-slider-thumb { -webkit-appearance: none; width: 28p
       else if (e.key === "Escape") { cancelLockFlow(); e.preventDefault(); }
       return;
     }
-    if (e.key === "Escape" && isOpen("settingsSheet")) { closeSettings(); e.preventDefault(); return; }
+    if (e.key === "Escape" && isOpen("settingsSheet")) { if (setPage !== "home") showPage("home"); else closeSettings(); e.preventDefault(); return; }
     if (e.key === "Escape" && isOpen("timerView")) { closeTimer(); e.preventDefault(); return; }
     if (e.key === "Escape" && isOpen("sleepView")) { closeSleep(); e.preventDefault(); }
   }
@@ -3139,6 +3252,7 @@ input[type="range"]::-webkit-slider-thumb { -webkit-appearance: none; width: 28p
     $("dismissBtn").addEventListener("click", stopAlarm);
     $("addAlarmBtn").addEventListener("click", function(){
       state.alarms.push({ id: newId(), time: "07:00", label: "", days: [false,true,true,true,true,true,false], on: true, skipHolidays: true, sound: "chimes" });
+      alarmOpen = state.alarms.length - 1;
       alarmsChanged(); renderAlarmList();
     });
     $("addHolidayBtn").addEventListener("click", function(){
